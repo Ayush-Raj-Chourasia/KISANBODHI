@@ -30,8 +30,11 @@ export default function AgentSidebar() {
     let i = 0;
     const interval = setInterval(() => {
       if (i < MOCK_LOGS.length) {
-        setLogs((prev) => [...prev, MOCK_LOGS[i]]);
+        const logLine = MOCK_LOGS[i];
         i++;
+        if (logLine) {
+          setLogs((prev) => [...prev, logLine]);
+        }
       } else {
         i = 0;
         setLogs([]);
