@@ -13,7 +13,24 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["Inter", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "monospace"],
+      },
       colors: {
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
+        "panel-bg": "hsl(var(--sidebar-bg))",
+        "panel-fg": "hsl(var(--sidebar-fg))",
+        "panel-accent": "hsl(var(--sidebar-accent))",
+        "panel-border": "hsl(var(--sidebar-border))",
+        "panel-muted": "hsl(var(--sidebar-muted))",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
