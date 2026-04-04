@@ -111,6 +111,83 @@ router.post("/auth/register", (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/agent/query
+ * Natural language query from dashboard — runs all agents
+ */
+router.post("/agent/query", async (req: Request, res: Response) => {
+  try {
+    const { query, context } = req.body;
+    if (!query) {
+      return res.status(400).json({ error: "Query is required" });
+    }
+
+    const district = context?.district || "Kendrapara";
+    const state = context?.state || "Odisha";
+    const crops = context?.crops || ["paddy", "rice"];
+
+    const result = await orchestrator.executeDistrictWorkflow(district, state, crops);
+
+    // Transform orchestrator output into the AgentResponse format the frontend expects
+    const sentinelData = result.agentResponses?.find((r: any) => r.agentName === "Sentinel");
+    const analystData = result.agentResponses?.find((r: any) => r.agentName === "Analyst");
+    const advisorData = result.agentResponses?.find((r: any) => r.agentName === "Advisor");
+    const policyData = result.agentResponses?.find((r: any) => r.agentName === "Policy");
+
+    const weatherData = (sentinelData?.data as any)?.weatherData;
+    const alerts = (sentinelData?.data as any)?.alerts || [];
+    const cropModels = (analystData?.data as any)?.cropLossModels || [];
+    const incomeRisks = (analystData?.data as any)?.incomeRisks || [];
+    const actionPlan = (advisorData?.data as any)?.actionPlan || [];
+    const schemes = (advisorData?.data as any)?.schemeRecommendations || [];
+    const sdgMappings = (policyData?.data as any)?.sdgMappings || [];
+
+    res.json({
+      status: "success",
+      query,
+      agents_output: {
+        sentinel: {
+          weather_alert: alerts[0]?.title || (weatherData ? `Temperature ${weatherData.temperature}°C, Humidity ${weatherData.humidity}%` : "No active weather alerts"),
+          hazard_signal: alerts[0]?.severity || "low",
+          probability: cropModels[0]?.factors?.weather ? cropModels[0].factors.weather / 100 : 0.2,
+        },
+        analyst: {
+          risk_score: cropModels[0]?.overallRisk ? Math.round(cropModels[0].overallRisk / 10) : 3,
+          crop_loss_probability: cropModels[0]?.overallRisk ? cropModels[0].overallRisk / 100 : 0.15,
+          income_impact: incomeRisks[0] ? `₹${incomeRisks[0].projectedIncome?.toLocaleString()} projected` : "Moderate impact expected",
+        },
+        advisor: {
+          recommendations: actionPlan.length > 0
+            ? actionPlan.map((a: any) => a.title || a.description || String(a)).slice(0, 5)
+            : ["Monitor weather conditions", "Check PMFBY enrollment status", "Diversify crop portfolio"],
+        },
+        policy: {
+          sdg_alignment: sdgMappings.length > 0
+            ? sdgMappings.map((s: any) => `${s.target}: ${s.description}`)
+            : ["SDG 1: No Poverty", "SDG 2: Zero Hunger", "SDG 13: Climate Action"],
+          applicable_schemes: schemes.length > 0
+            ? schemes.map((s: any) => s.name || s.fullName || String(s)).slice(0, 4)
+            : ["PMFBY", "PM-KISAN", "eNAM", "KCC"],
+        },
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Agent query error:", error);
+    res.status(500).json({
+      status: "error",
+      error: "Agent pipeline failed. Using fallback response.",
+      agents_output: {
+        sentinel: { weather_alert: "System processing", hazard_signal: "low", probability: 0.1 },
+        analyst: { risk_score: 2, crop_loss_probability: 0.1, income_impact: "Minimal" },
+        advisor: { recommendations: ["Contact your local KVK for assistance"] },
+        policy: { sdg_alignment: ["SDG 2: Zero Hunger"], applicable_schemes: ["PMFBY"] },
+      },
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+/**
  * POST /api/analysis
  * Request agricultural analysis for a location and crops
  */
