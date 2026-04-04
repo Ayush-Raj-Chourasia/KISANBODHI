@@ -6,11 +6,11 @@ import { NewsEvent, Location } from "../types/index.js";
  * Processes and categorizes news for farming communities
  */
 export class NewsService {
-  private newsSources: string[] = [
-    "https://farmer.gov.in",
-    "https://news.ians.in",
-    "https://www.thekrishak.com",
-  ];
+  private serperApiKey: string;
+
+  constructor() {
+    this.serperApiKey = process.env.NEWS_API_KEY || "";
+  }
 
   /**
    * Fetch relevant news events for a location and crops
@@ -21,49 +21,57 @@ export class NewsService {
     limit: number = 10
   ): Promise<NewsEvent[]> {
     try {
-      // In production, this would aggregate from multiple news sources
-      const allNews = await this.fetchAggregatedNews(crops, location);
-      return allNews.slice(0, limit);
+      if (this.serperApiKey) {
+        const realNews = await this.fetchFromSerper(crops, location);
+        if (realNews.length > 0) return realNews.slice(0, limit);
+      }
+      console.warn("No NEWS_API_KEY or Serper returned empty. Using mock news.");
+      return this.getMockNews(crops, location).slice(0, limit);
     } catch (error) {
       console.error("Error fetching news:", error);
-      return this.getMockNews(crops, location);
+      return this.getMockNews(crops, location).slice(0, limit);
     }
   }
 
   /**
-   * Aggregate news from multiple sources
+   * Fetch news via Serper.dev Google Search API
    */
-  private async fetchAggregatedNews(
+  private async fetchFromSerper(
     crops: string[],
     location: Location
   ): Promise<NewsEvent[]> {
-    const newsPromises = this.newsSources.map((source) =>
-      this.fetchFromSource(source, crops, location).catch(() => [])
-    );
-
-    const allNews = await Promise.all(newsPromises);
-    return allNews.flat().sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }
-
-  /**
-   * Fetch news from a specific source
-   */
-  private async fetchFromSource(
-    source: string,
-    crops: string[],
-    location: Location
-  ): Promise<NewsEvent[]> {
+    const query = `${location.state} ${location.district} agriculture ${crops.slice(0, 2).join(" ")} farming news India`;
+    
     try {
-      const response = await fetch(`${source}/api/news?region=${location.state}`);
+      const response = await fetch("https://google.serper.dev/news", {
+        method: "POST",
+        headers: {
+          "X-API-KEY": this.serperApiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ q: query, gl: "in", num: 10 }),
+      });
 
       if (!response.ok) {
-        throw new Error(`Source error: ${response.statusText}`);
+        console.warn(`Serper API error: ${response.status}`);
+        return [];
       }
 
-      const data = await response.json() as any[];
-      return this.formatNewsData(data, crops, location);
+      const data = await response.json() as any;
+      const articles = data.news || [];
+
+      return articles.map((article: any, idx: number) => ({
+        id: `serper-${idx}-${Date.now()}`,
+        title: article.title || "Agricultural News",
+        content: article.snippet || article.title || "",
+        category: this.categorizeNews({ title: article.title, content: article.snippet || "" }),
+        severity: this.calculateSeverity({ title: article.title, content: article.snippet || "" }),
+        timestamp: new Date(article.date || Date.now()),
+        relevantCrops: this.extractRelevantCrops({ title: article.title, content: article.snippet || "" }, crops),
+        relevantRegions: [location.state, location.district],
+      }));
     } catch (error) {
-      console.error(`Error fetching from ${source}:`, error);
+      console.error("Serper API error:", error);
       return [];
     }
   }
