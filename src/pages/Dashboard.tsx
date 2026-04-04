@@ -10,9 +10,10 @@ import {
   Cloud, AlertTriangle, TrendingDown, CheckCircle, Send, Loader2,
   Shield, Sprout, MapPin, Thermometer, Droplets, Wind, Eye,
   Megaphone, Zap, Users, BarChart3, FileText, Activity, Brain,
-  Search, Bug, ShieldCheck, CloudRain, Star
+  Search, Bug, ShieldCheck, CloudRain, Star, PhoneCall, Newspaper
 } from 'lucide-react';
 import { AgentResponse } from '@/types';
+import { LandingChatbot } from '@/components/LandingChatbot';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -39,6 +40,7 @@ const QUICK_PROMPTS = [
   { icon: ShieldCheck, label: "Check Insurance", query: "Check my PMFBY insurance status and eligible claims" },
   { icon: Bug, label: "Report Pest Attack", query: "Pest attack detected on paddy crop, what should I do?" },
   { icon: BarChart3, label: "Market Prices", query: "What are current paddy and rice market prices on eNAM?" },
+  { icon: Newspaper, label: "Live Agricultural News", query: "Show me the latest agricultural and weather news for my district" },
 ];
 
 // Agent status indicators
@@ -113,7 +115,8 @@ export default function Dashboard() {
 
       if (advisoryRes.ok) {
         const advisory = await advisoryRes.json();
-        const sentinelData = advisory?.data?.sentinelReport;
+        const sentinelData = advisory?.data?.agentResponses?.find((r: any) => r.agentName === 'Sentinel')?.data || advisory?.data?.sentinelReport;
+        
         const wd = sentinelData?.weatherData;
         const alerts = sentinelData?.alerts || [];
 
@@ -237,9 +240,9 @@ export default function Dashboard() {
         {/* ─── HERO ───────────────────────────────────── */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
           <h1 className="text-3xl sm:text-4xl font-bold mb-1">
-            {t('dashboard.welcome')}, {user?.name}!
+            {t('dashboard.welcome', 'Welcome Back')}, {user?.name}!
           </h1>
-          <p className="text-muted-foreground">{t('app_tagline')}</p>
+          <p className="text-muted-foreground">{t('app_tagline', 'Farmer Intelligence for Better Tomorrow')}</p>
         </motion.div>
 
         {/* ─── 1. PROACTIVE ALERT BANNER ───────────────── */}
@@ -501,6 +504,8 @@ export default function Dashboard() {
             </p>
           </div>
         </motion.div>
+        {/* ─── CHATBOT WIDGET FOR LOGGED IN USERS ─── */}
+        <LandingChatbot />
       </main>
     </div>
   );
