@@ -1,5 +1,6 @@
 import express, { Request, Response, Router } from "express";
 import { OrchestratorAgent } from "../agents/orchestrator.agent.js";
+import { GoogleGenAI } from '@google/genai';
 import {
   AnalysisRequest,
   AdvisoryRequest,
@@ -10,6 +11,7 @@ import {
 
 const router = Router();
 const orchestrator = new OrchestratorAgent();
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // ─── In-Memory Auth Store (demo/competition) ───────────────────────────────
 interface UserRecord {
@@ -442,53 +444,64 @@ router.post("/agent/query", async (req: Request, res: Response) => {
     }
 
     const district = context?.district || "Kendrapara";
-    const state = context?.state || "Odisha";
-    const crops = context?.crops || ["paddy", "rice"];
+    const crops = (context?.crops || ["paddy"]).join(", ");
 
-    const result = await orchestrator.executeDistrictWorkflow(district, state, crops);
+    // Takshashila Policy Prompt for Google Gemini
+    const systemPrompt = `You are KISANBODHI, a 5-Agent Agricultural Intelligence system analyzing queries for a farmer in ${district} growing ${crops}.
 
-    // Transform orchestrator output into the AgentResponse format the frontend expects
-    const sentinelData = result.agentResponses?.find((r: any) => r.agentName === "Sentinel");
-    const analystData = result.agentResponses?.find((r: any) => r.agentName === "Analyst");
-    const advisorData = result.agentResponses?.find((r: any) => r.agentName === "Advisor");
-    const policyData = result.agentResponses?.find((r: any) => r.agentName === "Policy");
+According to the Takshashila Institution Policy Framework, you MUST apply strict risk assessment to all queries:
+Policy 1: Human In The Loop (HITL). High-risk advice (e.g. premature harvesting, chemical dumps) MUST be locked pending Krishi Sahayak approval.
+Policy 2: Risk-Based System. Categorize risk as 'LOW', 'MEDIUM', or 'HIGH'. 
+LOW: automated suggestions. MEDIUM: warnings. HIGH: locked, human-approved only.
+Policy 3: Transparency. Every response MUST factor in a Confidence Score (0-100). If confidence < 70, risk escalation is managed by human intervention.
 
-    const weatherData = (sentinelData?.data as any)?.weatherData;
-    const alerts = (sentinelData?.data as any)?.alerts || [];
-    const cropModels = (analystData?.data as any)?.cropLossModels || [];
-    const incomeRisks = (analystData?.data as any)?.incomeRisks || [];
-    const actionPlan = (advisorData?.data as any)?.actionPlan || [];
-    const schemes = (advisorData?.data as any)?.schemeRecommendations || [];
-    const sdgMappings = (policyData?.data as any)?.sdgMappings || [];
+IMPORTANT: Respond ONLY with a valid JSON object matching this schema exactly:
+{
+  "agents_output": {
+    "sentinel": {
+      "weather_alert": "Brief assessment of query weather impact",
+      "hazard_signal": "LOW", "MEDIUM", or "HIGH",
+      "probability": 0.0 to 1.0 (float)
+    },
+    "analyst": {
+      "risk_score": 1 to 10 (int),
+      "crop_loss_probability": 0.0 to 1.0 (float),
+      "income_impact": "string describing $ impact or loss"
+    },
+    "advisor": {
+      "recommendations": ["list", "of", "up", "to", "4", "specific", "actionable", "steps"]
+    },
+    "policy": {
+      "sdg_alignment": ["SDG X.X: brief explanation"],
+      "applicable_schemes": ["PMFBY", "PM-KISAN", "eNAM", "KCC"]
+    }
+  }
+}
+
+If hazard_signal is HIGH or confidence is < 70, you MUST state that human approval (Krishi Sahayak) is required in the advisor recommendations. Return ONLY JSON.`;
+
+    const result = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
+        { role: 'user', parts: [{ text: systemPrompt + "\\n\\nFarmer Query: " + query }] }
+      ]
+    });
+
+    let rawOutput = result.text || "{}";
+    rawOutput = rawOutput.replace(/\`\`\`json/g, "").replace(/\`\`\`/g, "").trim();
+
+    let aiData;
+    try {
+      aiData = JSON.parse(rawOutput);
+    } catch (parseError) {
+      console.error("Failed to parse Gemini JSON:", parseError);
+      throw new Error("Invalid output format from LLM");
+    }
 
     res.json({
       status: "success",
       query,
-      agents_output: {
-        sentinel: {
-          weather_alert: alerts[0]?.title || (weatherData ? `Temperature ${weatherData.temperature}°C, Humidity ${weatherData.humidity}%` : "No active weather alerts"),
-          hazard_signal: alerts[0]?.severity || "low",
-          probability: cropModels[0]?.factors?.weather ? cropModels[0].factors.weather / 100 : 0.2,
-        },
-        analyst: {
-          risk_score: cropModels[0]?.overallRisk ? Math.round(cropModels[0].overallRisk / 10) : 3,
-          crop_loss_probability: cropModels[0]?.overallRisk ? cropModels[0].overallRisk / 100 : 0.15,
-          income_impact: incomeRisks[0] ? `₹${incomeRisks[0].projectedIncome?.toLocaleString()} projected` : "Moderate impact expected",
-        },
-        advisor: {
-          recommendations: actionPlan.length > 0
-            ? actionPlan.map((a: any) => a.title || a.description || String(a)).slice(0, 5)
-            : ["Monitor weather conditions", "Check PMFBY enrollment status", "Diversify crop portfolio"],
-        },
-        policy: {
-          sdg_alignment: sdgMappings.length > 0
-            ? sdgMappings.map((s: any) => `${s.target}: ${s.description}`)
-            : ["SDG 1: No Poverty", "SDG 2: Zero Hunger", "SDG 13: Climate Action"],
-          applicable_schemes: schemes.length > 0
-            ? schemes.map((s: any) => s.name || s.fullName || String(s)).slice(0, 4)
-            : ["PMFBY", "PM-KISAN", "eNAM", "KCC"],
-        },
-      },
+      agents_output: aiData.agents_output,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
@@ -497,10 +510,10 @@ router.post("/agent/query", async (req: Request, res: Response) => {
       status: "error",
       error: "Agent pipeline failed. Using fallback response.",
       agents_output: {
-        sentinel: { weather_alert: "System processing", hazard_signal: "low", probability: 0.1 },
-        analyst: { risk_score: 2, crop_loss_probability: 0.1, income_impact: "Minimal" },
-        advisor: { recommendations: ["Contact your local KVK for assistance"] },
-        policy: { sdg_alignment: ["SDG 2: Zero Hunger"], applicable_schemes: ["PMFBY"] },
+        sentinel: { weather_alert: "System processing fallback", hazard_signal: "LOW", probability: 0.1 },
+        analyst: { risk_score: 3, crop_loss_probability: 0.1, income_impact: "Moderate impact expected" },
+        advisor: { recommendations: ["Check internet connection", "Consult local Krishi Sahayak"] },
+        policy: { sdg_alignment: ["SDG 1: No Poverty"], applicable_schemes: ["PMFBY"] },
       },
       timestamp: new Date().toISOString(),
     });
