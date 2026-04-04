@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { Mic, Send, AlertTriangle, ShieldCheck, Sprout, Tractor, OctagonAlert, FileCheck } from "lucide-react";
+import { Mic, Send, AlertTriangle, ShieldCheck, Sprout, Tractor, OctagonAlert, FileCheck, AlertCircle, Loader2 } from "lucide-react";
+import { useAdvisory } from "../hooks/useApi";
+import { Farmer } from "../services/api.client";
+import { Alert, AlertDescription } from "./ui/alert";
 
 const languages = [
   { code: "en", label: "English" },
@@ -7,11 +10,26 @@ const languages = [
   { code: "hi", label: "हिन्दी (Hindi)" },
 ];
 
-export default function FarmerDashboard() {
+const SkeletonLoader = () => (
+  <div className="space-y-4 animate-pulse">
+    <div className="h-24 bg-muted rounded-2xl" />
+    <div className="h-40 bg-muted rounded-2xl" />
+    <div className="h-32 bg-muted rounded-2xl" />
+  </div>
+);
+
+interface FarmerDashboardProps {
+  farmer?: Farmer;
+}
+
+export default function FarmerDashboard({ farmer }: FarmerDashboardProps) {
   const [lang, setLang] = useState("en");
   const [input, setInput] = useState("");
   const [showResults, setShowResults] = useState(true);
   const [isListening, setIsListening] = useState(false);
+  
+  // Fetch advisory data from backend
+  const { data: advisoryData, isLoading, error } = useAdvisory(farmer, true);
 
   const handleMicClick = () => {
     setIsListening(!isListening);
@@ -109,79 +127,108 @@ export default function FarmerDashboard() {
         {/* Mock Results */}
         {showResults && (
           <section className="space-y-5 animate-in fade-in duration-500">
-            {/* Alert Card */}
-            <div className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-5 flex items-start gap-4">
-              <AlertTriangle className="w-8 h-8 text-destructive shrink-0 mt-0.5" />
-              <div>
-                <h3 className="text-lg font-bold text-destructive">
-                  ⚠️ {lang === "hi" ? "चक्रवात चेतावनी: पारादीप तट" :
-                       lang === "od" ? "ବାତ୍ୟା ସତର୍କତା: ପାରାଦୀପ ଉପକୂଳ" :
-                       "Cyclone Alert: Paradip Coast"}
-                </h3>
-                <p className="text-sm text-foreground/70 mt-1">
-                  {lang === "hi" ? "14 घंटे में भूमिगत होने की संभावना। हवा: 145km/h" :
-                   lang === "od" ? "14 ଘଣ୍ଟା ମଧ୍ୟରେ ଭୂମିଗତ ହେବାର ସମ୍ଭାବନା। ବାୟୁ: 145km/h" :
-                   "Expected landfall in 14 hours. Wind: 145km/h"}
-                </p>
-              </div>
-            </div>
+            {/* Loading State */}
+            {isLoading && <SkeletonLoader />}
 
-            {/* Action Plan */}
-            <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
-              <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-primary" />
-                {lang === "hi" ? "कार्य योजना" : lang === "od" ? "କାର୍ଯ୍ୟ ଯୋଜନା" : "Action Plan"}
-              </h3>
-              <div className="space-y-4">
-                {[
-                  {
-                    icon: <OctagonAlert className="w-7 h-7 text-destructive" />,
-                    text: lang === "hi" ? "फसल की कटाई न करें — तूफ़ान तक रुकें" :
-                          lang === "od" ? "ଫସଲ କାଟନ୍ତୁ ନାହିଁ — ଝଡ଼ ପର୍ଯ୍ୟନ୍ତ ଅପେକ୍ଷା କରନ୍ତୁ" :
-                          "Do NOT harvest — wait until the storm passes",
-                  },
-                  {
-                    icon: <Tractor className="w-7 h-7 text-warning" />,
-                    text: lang === "hi" ? "ट्रैक्टर को ऊंचे स्थान पर ले जाएं" :
-                          lang === "od" ? "ଟ୍ରାକ୍ଟରକୁ ଉଚ୍ଚ ସ୍ଥାନକୁ ସ୍ଥାନାନ୍ତର କରନ୍ତୁ" :
-                          "Move tractor & equipment to high ground",
-                  },
-                  {
-                    icon: <ShieldCheck className="w-7 h-7 text-primary" />,
-                    text: lang === "hi" ? "NDRF हेल्पलाइन पर कॉल करें: 1078" :
-                          lang === "od" ? "NDRF ହେଲ୍ପଲାଇନକୁ କଲ କରନ୍ତୁ: 1078" :
-                          "Call NDRF Helpline: 1078 if evacuation needed",
-                  },
-                ].map((action, i) => (
-                  <div key={i} className="flex items-center gap-4 bg-muted/50 rounded-xl p-4">
-                    {action.icon}
-                    <span className="text-base font-medium text-foreground">{action.text}</span>
+            {/* Error State */}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Unable to fetch advisory data. Please try again later.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Display Backend Data */}
+            {advisoryData && !isLoading && (
+              <>
+                {/* Extract data from advisory response */}
+                {advisoryData.data?.sentinelReport?.alerts && advisoryData.data.sentinelReport.alerts.length > 0 && (
+                  <>
+                    {advisoryData.data.sentinelReport.alerts.map((alert, idx) => (
+                      <div key={idx} className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-5 flex items-start gap-4">
+                        <AlertTriangle className="w-8 h-8 text-destructive shrink-0 mt-0.5" />
+                        <div>
+                          <h3 className="text-lg font-bold text-destructive">
+                            {alert.type === "weather" ? "⚠️ " : ""}
+                            {alert.description}
+                          </h3>
+                          <p className="text-sm text-foreground/70 mt-1">
+                            {alert.severity === "critical" && "Immediate action required"}
+                            {alert.severity === "high" && "Please take necessary precautions"}
+                            {alert.severity === "medium" && "Monitor situation closely"}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {/* Action Plan from Backend */}
+                {advisoryData.data?.advisorReport?.actionItems && advisoryData.data.advisorReport.actionItems.length > 0 && (
+                  <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
+                    <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
+                      <ShieldCheck className="w-5 h-5 text-primary" />
+                      {lang === "hi" ? "कार्य योजना" : lang === "od" ? "କାର୍ଯ୍ୟ ଯୋଜନା" : "Action Plan"}
+                    </h3>
+                    <div className="space-y-4">
+                      {advisoryData.data.advisorReport.actionItems.map((item, i) => (
+                        <div key={i} className="flex items-center gap-4 bg-muted/50 rounded-xl p-4">
+                          <div className="w-7 h-7 text-primary shrink-0">
+                            {item.priority === "critical" && <OctagonAlert className="w-7 h-7 text-destructive" />}
+                            {item.priority === "high" && <Tractor className="w-7 h-7 text-warning" />}
+                            {item.priority !== "critical" && item.priority !== "high" && <ShieldCheck className="w-7 h-7 text-primary" />}
+                          </div>
+                          <span className="text-base font-medium text-foreground">{item.description}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
+                )}
 
-            {/* Scheme Card */}
-            <div className="bg-info/10 border-2 border-info/30 rounded-2xl p-5 flex items-start gap-4">
-              <FileCheck className="w-8 h-8 text-info shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-info">
-                  {lang === "hi" ? "PMFBY बीमा के लिए पात्र" :
-                   lang === "od" ? "PMFBY ବୀମା ପାଇଁ ଯୋଗ୍ୟ" :
-                   "Eligible for PMFBY Insurance"}
-                </h3>
-                <p className="text-sm text-foreground/70 mt-1 mb-3">
-                  {lang === "hi" ? "प्रधानमंत्री फसल बीमा योजना — चक्रवात से फसल हानि कवर" :
-                   lang === "od" ? "ପ୍ରଧାନମନ୍ତ୍ରୀ ଫସଲ ବୀମା ଯୋଜନା — ବାତ୍ୟା ଦ୍ୱାରା ଫସଲ କ୍ଷତି କଭର" :
-                   "Pradhan Mantri Fasal Bima Yojana — covers cyclone crop loss"}
-                </p>
-                <button className="bg-info text-info-foreground px-5 py-2.5 rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity">
-                  {lang === "hi" ? "🔊 विवरण सुनें / आवेदन करें" :
-                   lang === "od" ? "🔊 ବିବରଣୀ ଶୁଣନ୍ତୁ / ଆବେଦନ କରନ୍ତୁ" :
-                   "🔊 Listen to Details / Apply"}
-                </button>
-              </div>
-            </div>
+                {/* Scheme Recommendations from Backend */}
+                {advisoryData.data?.advisorReport?.schemeRecommendations && advisoryData.data.advisorReport.schemeRecommendations.length > 0 && (
+                  <>
+                    {advisoryData.data.advisorReport.schemeRecommendations.map((scheme, idx) => (
+                      <div key={idx} className="bg-info/10 border-2 border-info/30 rounded-2xl p-5 flex items-start gap-4">
+                        <FileCheck className="w-8 h-8 text-info shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-info">
+                            {scheme.name}
+                          </h3>
+                          <p className="text-sm text-foreground/70 mt-1 mb-3">
+                            {scheme.description}
+                          </p>
+                          <div className="text-xs text-muted-foreground mb-3">
+                            <span className="bg-info/20 text-info px-2 py-1 rounded">
+                              Match: {Math.round((scheme.matchPercentage || 0) * 100)}%
+                            </span>
+                          </div>
+                          <button className="bg-info text-info-foreground px-5 py-2.5 rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity">
+                            {lang === "hi" ? "🔊 विवरण सुनें / आवेदन करें" :
+                             lang === "od" ? "🔊 ବିବରଣୀ ଶୁଣନ୍ତୁ / ଆବେଦନ କରନ୍ତୁ" :
+                             "🔊 Learn More / Apply"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {/* Fallback: Show mock data if no real data yet */}
+                {(!advisoryData.data?.sentinelReport?.alerts || advisoryData.data.sentinelReport.alerts.length === 0) &&
+                 (!advisoryData.data?.advisorReport?.actionItems || advisoryData.data.advisorReport.actionItems.length === 0) && (
+                  <div className="text-center py-10">
+                    <p className="text-muted-foreground">
+                      {lang === "hi" ? "कोई तत्काल सलाह उपलब्ध नहीं है" :
+                       lang === "od" ? "କୌଣସି ତାତ୍ତ୍ଵିକ ପରାମର୍ଶ ନାହିଁ" :
+                       "No urgent advisories at this time"}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
           </section>
         )}
       </div>
