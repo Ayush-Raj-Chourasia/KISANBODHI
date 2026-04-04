@@ -1,4 +1,4 @@
-import { Sprout, Shield, Users, Zap, Leaf, ArrowRight, Terminal, Mic, Globe, Bot, BarChart3, FileText, AlertTriangle, Brain, Database, Cpu, Search, ChevronRight, Activity, Sparkles } from "lucide-react";
+import { Sprout, Shield, Users, Zap, Leaf, ArrowRight, Terminal, Mic, Globe, Bot, BarChart3, FileText, AlertTriangle, Brain, Database, Cpu, Search, ChevronRight, Activity, Sparkles, PhoneCall } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { LandingChatbot } from "@/components/LandingChatbot";
@@ -184,6 +184,69 @@ export default function Landing() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ─── IVR TOLL-FREE INTEGRATION ──────────────────────────────────── */}
+      <section className="py-20 px-6">
+        <div className="max-w-4xl mx-auto">
+          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={0}
+            className="bg-primary border border-primary-foreground/20 rounded-3xl p-8 sm:p-12 text-primary-foreground relative overflow-hidden shadow-2xl">
+            {/* Background design */}
+            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+              <PhoneCall className="w-64 h-64 -rotate-12" />
+            </div>
+
+            <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center">
+              <div className="flex-1 space-y-6">
+                <div className="inline-flex items-center gap-2 bg-primary-foreground/20 px-4 py-1.5 rounded-full text-sm font-semibold mb-2">
+                  <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" /> Accessible offline
+                </div>
+                <h2 className="text-3xl sm:text-4xl font-bold">Scaling to 400M+ Feature Phones</h2>
+                <p className="text-primary-foreground/80 text-lg leading-relaxed">
+                  No smartphone or internet required. Farmers can simply dial our toll-free baseline, speak their problem in their local language, and receive AI-generated voice guidance instantly.
+                </p>
+
+                <div className="space-y-4 pt-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-8 h-8 rounded-full bg-primary-foreground text-primary flex items-center justify-center font-bold text-sm shrink-0 mt-1">1</div>
+                    <p className="text-primary-foreground/90 font-medium pt-1.5">Farmer dials toll-free number and chooses language (Odia, Hindi, English)</p>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="w-8 h-8 rounded-full bg-primary-foreground text-primary flex items-center justify-center font-bold text-sm shrink-0 mt-1">2</div>
+                    <p className="text-primary-foreground/90 font-medium pt-1.5">Speaks farming query (Speech-to-Text via telecom API)</p>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="w-8 h-8 rounded-full bg-primary-foreground text-primary flex items-center justify-center font-bold text-sm shrink-0 mt-1">3</div>
+                    <p className="text-primary-foreground/90 font-medium pt-1.5">Orchestrator generates automated Voice Advisory (+ SMS with PMFBY link)</p>
+                  </div>
+                </div>
+              </div>
+              <div className="w-full md:w-[320px] shrink-0">
+                {/* Mock phone */}
+                <div className="bg-background max-w-[280px] mx-auto rounded-[3rem] p-3 border-[6px] border-primary-foreground/10 shadow-2xl relative">
+                  <div className="absolute top-0 inset-x-0 h-6 flex justify-center">
+                    <div className="w-16 h-4 bg-primary-foreground/10 rounded-b-2xl" />
+                  </div>
+                  <div className="bg-primary/5 rounded-[2.5rem] p-6 text-center space-y-6 pt-12 pb-10 border border-primary/10">
+                    <PhoneCall className="w-12 h-12 text-primary mx-auto animate-bounce" />
+                    <div>
+                      <div className="text-xs text-muted-foreground font-semibold tracking-widest uppercase mb-1">Incoming Call</div>
+                      <div className="text-xl font-bold text-foreground">KISANBODHI AI</div>
+                    </div>
+                    <div className="flex justify-center gap-4 pt-4">
+                      <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center border border-destructive/20">
+                        <PhoneCall className="w-6 h-6 text-destructive rotate-[135deg]" />
+                      </div>
+                      <div className="w-14 h-14 rounded-full bg-green-500/20 flex items-center justify-center shadow-lg shadow-green-500/20 border border-green-500/30">
+                        <PhoneCall className="w-6 h-6 text-green-600 animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
