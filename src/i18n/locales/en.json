@@ -1,0 +1,78 @@
+{
+  "app_name": "KISANBODHI",
+  "app_tagline": "Farmer Intelligence for Better Tomorrow",
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "query": "Ask Agent",
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "signup": "Sign Up",
+    "email": "Email Address",
+    "password": "Password",
+    "name": "Full Name",
+    "district": "District",
+    "language": "Preferred Language",
+    "remember": "Remember me",
+    "forgot": "Forgot password?",
+    "signin_prompt": "Already have an account? Login",
+    "signup_prompt": "Don't have an account? Sign up",
+    "submit": "Submit",
+    "cancel": "Cancel"
+  },
+  "landing": {
+    "hero_title": "Protect Your Farm with AI-Powered Intelligence",
+    "hero_subtitle": "Real-time weather alerts, crop loss predictions, and government scheme guidance for Indian smallholder farmers",
+    "cta_farmer": "I'm a Farmer",
+    "cta_learn": "Learn More",
+    "feature_1": "Real-time Alerts",
+    "feature_1_desc": "Live weather forecasts, flood warnings, and pest alerts for your district",
+    "feature_2": "Crop Protection",
+    "feature_2_desc": "AI-driven loss predictions and actionable protection strategies",
+    "feature_3": "Government Schemes",
+    "feature_3_desc": "Matched recommendations for applicable PMFBY, PM-KISAN, and more",
+    "feature_4": "Multi-language Support",
+    "feature_4_desc": "Interface in Odia, Hindi, and English for accessibility",
+    "footer_about": "KISANBODHI is an autonomous multi-agent AI system protecting India's smallholder farmers through NITI Aayog policy framework."
+  },
+  "dashboard": {
+    "welcome": "Welcome Back",
+    "today_alerts": "Today's Alerts",
+    "crop_status": "Crop Status",
+    "risk_score": "Risk Score",
+    "recommendations": "Recommendations",
+    "applicable_schemes": "Your Schemes",
+    "query_placeholder": "Ask about weather, crops, government schemes...",
+    "send": "Send",
+    "loading": "Processing...",
+    "my_profile": "My Profile",
+    "edit_profile": "Edit Profile"
+  },
+  "agent": {
+    "sentinel": "Weather Sentinel",
+    "analyst": "Loss Analyst",
+    "advisor": "Farm Advisor",
+    "policy": "Policy Expert",
+    "orchestrator": "Agent Coordinator",
+    "querying": "Analyzing your farm...",
+    "hazard": "Hazard Level",
+    "risk_score": "Risk Score",
+    "recommendations": "What to do now",
+    "schemes": "Applicable Government Schemes"
+  },
+  "errors": {
+    "login_failed": "Login failed. Please check your credentials.",
+    "register_failed": "Registration failed. Please try again.",
+    "network_error": "Network error. Check your connection.",
+    "required_field": "This field is required"
+  },
+  "success": {
+    "login_success": "Login successful!",
+    "register_success": "Account created successfully!",
+    "profile_updated": "Profile updated successfully"
+  }
+}
