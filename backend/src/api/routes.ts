@@ -14,45 +14,165 @@ const orchestrator = new OrchestratorAgent();
 // ─── In-Memory Auth Store (demo/competition) ───────────────────────────────
 interface UserRecord {
   id: string;
+  phone: string;
   email: string;
   password: string;
   name: string;
   district: string;
   language: string;
+  cropType: string;
+  farmSize: number;
 }
 
 const users: UserRecord[] = [
   {
     id: "farmer-001",
+    phone: "9876543210",
     email: "farmer@example.com",
     password: "password",
     name: "Rajesh Kumar",
     district: "Kendrapara",
     language: "en",
+    cropType: "paddy",
+    farmSize: 5,
   },
   {
     id: "farmer-002",
+    phone: "8765432109",
     email: "kisan@example.com",
     password: "password",
     name: "ସୁନୀଲ ମହାନ୍ତି",
     district: "Puri",
     language: "or",
+    cropType: "rice",
+    farmSize: 3,
   },
 ];
 
 let nextUserId = 3;
 
+// In-memory OTP store: phone → { otp, expiresAt }
+const otpStore: Map<string, { otp: string; expiresAt: number }> = new Map();
+
 function generateToken(userId: string): string {
   return Buffer.from(JSON.stringify({ userId, iat: Date.now() })).toString("base64");
+}
+
+function userResponse(user: UserRecord) {
+  return {
+    id: user.id,
+    phone: user.phone,
+    email: user.email,
+    name: user.name,
+    district: user.district,
+    language: user.language,
+    cropType: user.cropType,
+    farmSize: user.farmSize,
+  };
 }
 
 // ─── Auth Routes ────────────────────────────────────────────────────────────
 
 /**
- * POST /api/auth/login
+ * POST /api/auth/send-otp
+ * Send OTP to phone number via Twilio
+ */
+router.post("/auth/send-otp", async (req: Request, res: Response) => {
+  const { phone } = req.body;
+  if (!phone) {
+    return res.status(400).json({ error: "Phone number is required" });
+  }
+
+  const cleanPhone = phone.replace(/\D/g, "").slice(-10);
+  const otp = String(Math.floor(100000 + Math.random() * 900000));
+  otpStore.set(cleanPhone, { otp, expiresAt: Date.now() + 5 * 60 * 1000 }); // 5 min
+
+  // Try Twilio SMS
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const from = process.env.TWILIO_WHATSAPP_NUMBER;
+
+  if (accountSid && authToken && from) {
+    try {
+      const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+      const twilioAuth = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
+      const body = new URLSearchParams({
+        To: `+91${cleanPhone}`,
+        From: from,
+        Body: `Your KISANBODHI login OTP is: ${otp}. Valid for 5 minutes. — Team IQ Zero`,
+      });
+
+      await fetch(twilioUrl, {
+        method: "POST",
+        headers: { Authorization: `Basic ${twilioAuth}`, "Content-Type": "application/x-www-form-urlencoded" },
+        body: body.toString(),
+      });
+      console.log(`OTP ${otp} sent to +91${cleanPhone}`);
+    } catch (err) {
+      console.warn("Twilio SMS failed, OTP still stored for demo:", otp);
+    }
+  } else {
+    console.log(`[DEMO] OTP for ${cleanPhone}: ${otp}`);
+  }
+
+  res.json({ success: true, message: "OTP sent successfully", demo_hint: "Use 123456 for demo" });
+});
+
+/**
+ * POST /api/auth/verify-otp
+ * Verify OTP and login/register the user
+ */
+router.post("/auth/verify-otp", (req: Request, res: Response) => {
+  const { phone, otp, name, district, language } = req.body;
+  if (!phone || !otp) {
+    return res.status(400).json({ error: "Phone and OTP required" });
+  }
+
+  const cleanPhone = phone.replace(/\D/g, "").slice(-10);
+
+  // Demo shortcut: 123456 always works for competition
+  const stored = otpStore.get(cleanPhone);
+  if (otp !== "123456" && (!stored || stored.otp !== otp || stored.expiresAt < Date.now())) {
+    return res.status(401).json({ error: "Invalid or expired OTP" });
+  }
+
+  otpStore.delete(cleanPhone);
+
+  // Find or create user
+  let user = users.find((u) => u.phone === cleanPhone);
+  if (!user) {
+    user = {
+      id: `farmer-${String(nextUserId++).padStart(3, "0")}`,
+      phone: cleanPhone,
+      email: "",
+      password: "",
+      name: name || `Farmer ${cleanPhone.slice(-4)}`,
+      district: district || "Kendrapara",
+      language: language || "en",
+      cropType: "paddy",
+      farmSize: 2,
+    };
+    users.push(user);
+  }
+
+  res.json({ token: generateToken(user.id), user: userResponse(user) });
+});
+
+/**
+ * POST /api/auth/login (email fallback — keep for backward compatibility)
  */
 router.post("/auth/login", (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { email, password, phone } = req.body;
+
+  // Support phone-based lookup too
+  if (phone) {
+    const cleanPhone = phone.replace(/\D/g, "").slice(-10);
+    const user = users.find((u) => u.phone === cleanPhone);
+    if (user) {
+      return res.json({ token: generateToken(user.id), user: userResponse(user) });
+    }
+  }
+
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password required" });
   }
@@ -62,52 +182,94 @@ router.post("/auth/login", (req: Request, res: Response) => {
     return res.status(401).json({ error: "Invalid credentials" });
   }
 
-  res.json({
-    token: generateToken(user.id),
-    user: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      district: user.district,
-      language: user.language,
-    },
-  });
+  res.json({ token: generateToken(user.id), user: userResponse(user) });
 });
 
 /**
  * POST /api/auth/register
  */
 router.post("/auth/register", (req: Request, res: Response) => {
-  const { email, password, name, district, language } = req.body;
-  if (!email || !password || !name) {
-    return res.status(400).json({ error: "Email, password, and name are required" });
+  const { email, password, name, district, language, phone } = req.body;
+  if (!name) {
+    return res.status(400).json({ error: "Name is required" });
   }
 
-  if (users.find((u) => u.email === email)) {
+  const cleanPhone = phone ? phone.replace(/\D/g, "").slice(-10) : "";
+
+  if (email && users.find((u) => u.email === email)) {
     return res.status(409).json({ error: "User already exists" });
+  }
+  if (cleanPhone && users.find((u) => u.phone === cleanPhone)) {
+    return res.status(409).json({ error: "Phone already registered" });
   }
 
   const newUser: UserRecord = {
     id: `farmer-${String(nextUserId++).padStart(3, "0")}`,
-    email,
-    password,
+    phone: cleanPhone,
+    email: email || "",
+    password: password || "",
     name,
     district: district || "Khordha",
     language: language || "en",
+    cropType: "paddy",
+    farmSize: 2,
   };
 
   users.push(newUser);
+  res.status(201).json({ token: generateToken(newUser.id), user: userResponse(newUser) });
+});
 
-  res.status(201).json({
-    token: generateToken(newUser.id),
-    user: {
-      id: newUser.id,
-      email: newUser.email,
-      name: newUser.name,
-      district: newUser.district,
-      language: newUser.language,
-    },
-  });
+/**
+ * POST /api/chat
+ * Public chatbot — works without login for landing page visitors
+ */
+router.post("/chat", async (req: Request, res: Response) => {
+  try {
+    const { message, district, language } = req.body;
+    if (!message) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+
+    const dist = district || "Kendrapara";
+    const crops = ["paddy", "rice"];
+
+    const result = await orchestrator.executeDistrictWorkflow(dist, "Odisha", crops);
+
+    const sentinelData = result.agentResponses?.find((r: any) => r.agentName === "Sentinel");
+    const advisorData = result.agentResponses?.find((r: any) => r.agentName === "Advisor");
+    const wd = (sentinelData?.data as any)?.weatherData;
+    const actionPlan = (advisorData?.data as any)?.actionPlan || [];
+    const schemes = (advisorData?.data as any)?.schemeRecommendations || [];
+
+    let reply = "";
+    if (wd) {
+      reply += `🌤️ Current weather in ${dist}: ${Math.round(wd.temperature)}°C, Humidity ${wd.humidity}%, Wind ${Math.round(wd.windSpeed)} km/h.\n\n`;
+    }
+    if (actionPlan.length > 0) {
+      reply += `📋 Recommendations:\n`;
+      actionPlan.slice(0, 3).forEach((a: any, i: number) => {
+        reply += `${i + 1}. ${a.title || a.description || String(a)}\n`;
+      });
+      reply += `\n`;
+    }
+    if (schemes.length > 0) {
+      reply += `🏛️ Schemes for you: ${schemes.slice(0, 3).map((s: any) => s.name || s.fullName || String(s)).join(", ")}\n\n`;
+    }
+
+    reply += `\n💡 For personalized advice, login with your mobile number!`;
+
+    res.json({
+      reply: reply || "KISANBODHI is here to help! Ask about weather, crops, government schemes, or pest management.",
+      source: "multi-agent",
+      agents_used: ["Sentinel", "Advisor"],
+    });
+  } catch (error) {
+    console.error("Chat error:", error);
+    res.json({
+      reply: "🌾 KISANBODHI: I can help with weather, crop advice, PMFBY insurance, market prices, and government schemes. Try asking about today's weather or crop recommendations!\n\n💡 Login with your mobile number for personalized advice.",
+      source: "fallback",
+    });
+  }
 });
 
 /**

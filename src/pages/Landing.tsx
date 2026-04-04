@@ -1,6 +1,7 @@
 import { Sprout, Shield, Users, Zap, Leaf, ArrowRight, Terminal, Mic, Globe, Bot, BarChart3, FileText, AlertTriangle, Brain, Database, Cpu, Search, ChevronRight, Activity, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { LandingChatbot } from "@/components/LandingChatbot";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -347,6 +348,9 @@ export default function Landing() {
           </p>
         </div>
       </motion.footer>
+
+      {/* Floating Chatbot */}
+      <LandingChatbot />
     </div>
   );
 }
