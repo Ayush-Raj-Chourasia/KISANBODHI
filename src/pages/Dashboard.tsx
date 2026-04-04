@@ -16,6 +16,23 @@ import { AgentResponse } from '@/types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
+// ─── Offline Cache Helpers ─────────────────────────────────────────
+const CACHE_KEYS = {
+  WEATHER: 'kb_cache_weather',
+  ALERT: 'kb_cache_alert',
+  AGENTS: 'kb_cache_agents',
+  BROADCAST: 'kb_cache_broadcast',
+  LAST_RESPONSE: 'kb_cache_response',
+  LAST_UPDATED: 'kb_cache_timestamp',
+};
+
+function cacheSet(key: string, value: any) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
+function cacheGet<T>(key: string): T | null {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch { return null; }
+}
+
 // Quick action prompts for low-literacy farmers
 const QUICK_PROMPTS = [
   { icon: CloudRain, label: "Today's Weather Risk", query: "What is the weather risk for my paddy crop today in my district?" },
@@ -52,6 +69,8 @@ export default function Dashboard() {
   const [alertMessage, setAlertMessage] = useState('');
   const [agentStatuses, setAgentStatuses] = useState<Record<string, boolean>>({});
   const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [isOffline, setIsOffline] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   // Fetch live data on mount
   useEffect(() => {
@@ -99,41 +118,68 @@ export default function Dashboard() {
         const alerts = sentinelData?.alerts || [];
 
         if (wd) {
-          setWeather({
+          const weatherObj = {
             temperature: wd.temperature,
             humidity: wd.humidity,
             windSpeed: wd.windSpeed,
             rainfall: wd.rainfall,
             condition: wd.rainfall > 10 ? 'Rainy' : wd.temperature > 35 ? 'Hot' : 'Clear'
-          });
+          };
+          setWeather(weatherObj);
+          cacheSet(CACHE_KEYS.WEATHER, weatherObj);
         }
 
         // Set alert banner based on live data
         const criticalAlert = alerts.find((a: any) => a.severity === 'critical' || a.severity === 'high');
+        let aLevel: 'clear' | 'warning' | 'critical' = 'clear';
+        let aMsg = '';
         if (criticalAlert) {
-          setAlertLevel(criticalAlert.severity === 'critical' ? 'critical' : 'warning');
-          setAlertMessage(criticalAlert.title || criticalAlert.description || 'Weather advisory active for your district');
+          aLevel = criticalAlert.severity === 'critical' ? 'critical' : 'warning';
+          aMsg = criticalAlert.title || criticalAlert.description || 'Weather advisory active for your district';
         } else if (wd && (wd.rainfall > 50 || wd.windSpeed > 40)) {
-          setAlertLevel('warning');
-          setAlertMessage(`Heavy conditions detected: ${wd.rainfall}mm rainfall, ${wd.windSpeed} km/h winds`);
+          aLevel = 'warning';
+          aMsg = `Heavy conditions detected: ${wd.rainfall}mm rainfall, ${wd.windSpeed} km/h winds`;
         } else {
-          setAlertLevel('clear');
-          setAlertMessage(`Systems nominal. Weather is ${wd?.temperature ? `${Math.round(wd.temperature)}°C` : 'clear'} for your Paddy crop today.`);
+          aMsg = `Systems nominal. Weather is ${wd?.temperature ? `${Math.round(wd.temperature)}°C` : 'clear'} for your Paddy crop today.`;
         }
+        setAlertLevel(aLevel);
+        setAlertMessage(aMsg);
+        cacheSet(CACHE_KEYS.ALERT, { level: aLevel, message: aMsg });
 
         // Set broadcast from news
         const newsEvents = sentinelData?.newsEvents || [];
+        let bMsg = 'State agriculture department: Monitor weather advisories regularly. PMFBY enrollment window open for Kharif 2026.';
         if (newsEvents.length > 0) {
-          setBroadcastMessage(newsEvents[0].title + ' — ' + (newsEvents[0].content || '').slice(0, 120));
-        } else {
-          setBroadcastMessage('State agriculture department: Monitor weather advisories regularly. PMFBY enrollment window open for Kharif 2026.');
+          bMsg = newsEvents[0].title + ' — ' + (newsEvents[0].content || '').slice(0, 120);
         }
+        setBroadcastMessage(bMsg);
+        cacheSet(CACHE_KEYS.BROADCAST, bMsg);
+
+        // Mark online + cache timestamp
+        setIsOffline(false);
+        const ts = new Date().toLocaleTimeString();
+        setLastUpdated(ts);
+        cacheSet(CACHE_KEYS.LAST_UPDATED, ts);
       }
     } catch (error) {
-      console.error('Live status fetch error:', error);
-      setAlertLevel('clear');
-      setAlertMessage('Backend connecting... Weather data loading.');
-      setBroadcastMessage('State agriculture department: PMFBY enrollment window open for Kharif 2026. Visit your nearest CSC.');
+      console.error('Live status fetch error — entering offline mode:', error);
+      setIsOffline(true);
+
+      // ─── OFFLINE: Load from localStorage ───
+      const cachedWeather = cacheGet<WeatherSnapshot>(CACHE_KEYS.WEATHER);
+      if (cachedWeather) setWeather(cachedWeather);
+
+      const cachedAlert = cacheGet<{ level: 'clear' | 'warning' | 'critical'; message: string }>(CACHE_KEYS.ALERT);
+      if (cachedAlert) { setAlertLevel(cachedAlert.level); setAlertMessage(cachedAlert.message); }
+      else { setAlertLevel('clear'); setAlertMessage('Offline — showing last known data.'); }
+
+      const cachedBroadcast = cacheGet<string>(CACHE_KEYS.BROADCAST);
+      setBroadcastMessage(cachedBroadcast || 'PMFBY enrollment window open for Kharif 2026. Visit your nearest CSC.');
+
+      const cachedResponse = cacheGet<AgentResponse>(CACHE_KEYS.LAST_RESPONSE);
+      if (cachedResponse) setResponse(cachedResponse);
+
+      setLastUpdated(cacheGet<string>(CACHE_KEYS.LAST_UPDATED) || null);
     }
   };
 
@@ -159,9 +205,16 @@ export default function Dashboard() {
       if (res.ok) {
         const data = await res.json();
         setResponse(data);
+        cacheSet(CACHE_KEYS.LAST_RESPONSE, data);
+        setIsOffline(false);
       }
     } catch (error) {
-      console.error('Query failed:', error);
+      console.error('Query failed — checking offline cache:', error);
+      setIsOffline(true);
+      const cachedResponse = cacheGet<AgentResponse>(CACHE_KEYS.LAST_RESPONSE);
+      if (cachedResponse) {
+        setResponse(cachedResponse);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -172,6 +225,15 @@ export default function Dashboard() {
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 py-6">
+        {/* ─── OFFLINE BADGE ────────────────────────── */}
+        {isOffline && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+            className="mb-4 flex items-center gap-2 bg-yellow-50 border-2 border-yellow-300 text-yellow-800 dark:bg-yellow-950/50 dark:border-yellow-700 dark:text-yellow-200 rounded-xl px-4 py-2.5">
+            <span className="text-lg">⚠️</span>
+            <span className="text-sm font-semibold">Offline Mode</span>
+            <span className="text-xs text-yellow-600 dark:text-yellow-400">— Showing last known data{lastUpdated ? ` (updated ${lastUpdated})` : ''}. Connect to internet for live updates.</span>
+          </motion.div>
+        )}
         {/* ─── HERO ───────────────────────────────────── */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
           <h1 className="text-3xl sm:text-4xl font-bold mb-1">

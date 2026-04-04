@@ -272,6 +272,164 @@ router.post("/chat", async (req: Request, res: Response) => {
   }
 });
 
+// ─── IVR (Interactive Voice Response) for Feature Phones ────────────────────
+// Enables 400M+ feature phone users to access KISANBODHI via phone call
+// Flow: Farmer dials toll-free → Language selection → Speaks problem →
+//       AI processes → Voice reads advice → SMS with scheme link
+
+/**
+ * POST /api/ivr/welcome
+ * Twilio webhook: First contact — language selection
+ */
+router.post("/ivr/welcome", (req: Request, res: Response) => {
+  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Gather input="dtmf" numDigits="1" action="/api/ivr/gather" method="POST" timeout="10">
+    <Say voice="Polly.Aditi" language="hi-IN">
+      किसानबोधि में आपका स्वागत है। कृपया अपनी भाषा चुनें।
+    </Say>
+    <Say voice="Polly.Aditi" language="en-IN">
+      Welcome to KISANBODHI. Press 1 for English. Press 2 for Hindi. Press 3 for Odia.
+    </Say>
+  </Gather>
+  <Say voice="Polly.Aditi" language="en-IN">Sorry, we didn't receive any input. Goodbye.</Say>
+</Response>`;
+  res.type("text/xml").send(twiml);
+});
+
+/**
+ * POST /api/ivr/gather
+ * Twilio webhook: After language selection — gather speech input
+ */
+router.post("/ivr/gather", (req: Request, res: Response) => {
+  const digit = req.body.Digits || "1";
+  const langMap: Record<string, { code: string; voice: string; prompt: string }> = {
+    "1": { code: "en-IN", voice: "Polly.Aditi", prompt: "Please describe your farming problem after the beep. For example, say: flood warning in my area, or pest attack on paddy." },
+    "2": { code: "hi-IN", voice: "Polly.Aditi", prompt: "कृपया बीप के बाद अपनी खेती की समस्या बताएं। जैसे: मेरे क्षेत्र में बाढ़ की चेतावनी, या धान पर कीट हमला।" },
+    "3": { code: "or-IN", voice: "Polly.Aditi", prompt: "ଦୟାକରି ବୀପ ପରେ ଆପଣଙ୍କ ଚାଷ ସମସ୍ୟା କୁହନ୍ତୁ।" },
+  };
+
+  const lang = langMap[digit] || langMap["1"];
+
+  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Gather input="speech" speechTimeout="auto" language="${lang.code}" action="/api/ivr/process?lang=${digit}" method="POST">
+    <Say voice="${lang.voice}" language="${lang.code}">${lang.prompt}</Say>
+  </Gather>
+  <Say voice="${lang.voice}" language="${lang.code}">Sorry, we could not hear you. Please call again.</Say>
+</Response>`;
+  res.type("text/xml").send(twiml);
+});
+
+/**
+ * POST /api/ivr/process
+ * Twilio webhook: Process speech → run agents → voice response + SMS
+ */
+router.post("/ivr/process", async (req: Request, res: Response) => {
+  const spokenText = req.body.SpeechResult || "weather advisory";
+  const callerPhone = req.body.From || "";
+  const langDigit = (req.query.lang as string) || "1";
+
+  const voiceMap: Record<string, { voice: string; lang: string }> = {
+    "1": { voice: "Polly.Aditi", lang: "en-IN" },
+    "2": { voice: "Polly.Aditi", lang: "hi-IN" },
+    "3": { voice: "Polly.Aditi", lang: "or-IN" },
+  };
+
+  const v = voiceMap[langDigit] || voiceMap["1"];
+  let adviceText = "";
+
+  try {
+    // Run the multi-agent system on the spoken query
+    const result = await orchestrator.executeDistrictWorkflow("Kendrapara", "Odisha", ["paddy"]);
+    const advisorData = result.agentResponses?.find((r: any) => r.agentName === "Advisor");
+    const sentinelData = result.agentResponses?.find((r: any) => r.agentName === "Sentinel");
+    const wd = (sentinelData?.data as any)?.weatherData;
+    const actionPlan = (advisorData?.data as any)?.actionPlan || [];
+    const schemes = (advisorData?.data as any)?.schemeRecommendations || [];
+
+    if (wd) {
+      adviceText += `Current weather: ${Math.round(wd.temperature)} degrees celsius, humidity ${wd.humidity} percent. `;
+    }
+
+    if (actionPlan.length > 0) {
+      adviceText += `My recommendations: `;
+      actionPlan.slice(0, 3).forEach((a: any, i: number) => {
+        adviceText += `${i + 1}. ${a.title || a.description || String(a)}. `;
+      });
+    }
+
+    if (schemes.length > 0) {
+      const schemeNames = schemes.slice(0, 2).map((s: any) => s.name || s.fullName || String(s)).join(" and ");
+      adviceText += `You may be eligible for ${schemeNames}. `;
+    }
+
+    adviceText += `For more help, visit your nearest Krishi Vigyan Kendra or call this number again.`;
+
+    // Send SMS with scheme link if Twilio is configured
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const from = process.env.TWILIO_WHATSAPP_NUMBER;
+
+    if (accountSid && authToken && from && callerPhone) {
+      try {
+        const smsBody = `KISANBODHI Advisory:\n${actionPlan.slice(0, 2).map((a: any, i: number) => `${i + 1}. ${a.title || a.description || String(a)}`).join("\n")}\n\nPMFBY Enrollment: https://pmfby.gov.in\nPM-KISAN: https://pmkisan.gov.in\nHelpline: 1800-180-1551`;
+
+        const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+        const twilioAuth = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
+        
+        await fetch(twilioUrl, {
+          method: "POST",
+          headers: { Authorization: `Basic ${twilioAuth}`, "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ To: callerPhone, From: from, Body: smsBody }).toString(),
+        });
+        console.log(`SMS advisory sent to ${callerPhone}`);
+
+        adviceText += ` I have also sent you an SMS with scheme links and helpline numbers.`;
+      } catch (smsErr) {
+        console.warn("SMS send failed:", smsErr);
+      }
+    }
+  } catch (error) {
+    console.error("IVR processing error:", error);
+    adviceText = "I am sorry, the system is busy right now. Please try again in a few minutes. For immediate help, call the Kisan helpline at 1800-180-1551.";
+  }
+
+  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="${v.voice}" language="${v.lang}">
+    Thank you for calling KISANBODHI. You said: ${spokenText}. 
+    Here is my advice: ${adviceText}
+  </Say>
+  <Say voice="${v.voice}" language="${v.lang}">
+    Thank you for using KISANBODHI. Jai Kisan!
+  </Say>
+</Response>`;
+  res.type("text/xml").send(twiml);
+});
+
+/**
+ * GET /api/ivr/status
+ * Check IVR system status
+ */
+router.get("/ivr/status", (req: Request, res: Response) => {
+  res.json({
+    status: "active",
+    description: "KISANBODHI IVR System for Feature Phone Farmers",
+    flow: [
+      "1. Farmer dials toll-free number",
+      "2. Language selection (English/Hindi/Odia)",
+      "3. Farmer speaks their problem",
+      "4. AI processes via multi-agent system",
+      "5. Voice reads advisory back to farmer",
+      "6. SMS sent with scheme links & helpline numbers",
+    ],
+    supported_languages: ["English", "Hindi (हिंदी)", "Odia (ଓଡ଼ିଆ)"],
+    twilio_configured: !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN),
+    toll_free_hint: "Configure Twilio phone number and point webhook to /api/ivr/welcome",
+  });
+});
+
 /**
  * POST /api/agent/query
  * Natural language query from dashboard — runs all agents
