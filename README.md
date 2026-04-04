@@ -1,491 +1,246 @@
-# 🌾 KISANBODHI - Farmer Intelligence System
+# 🌾 KISANBODHI — किसानबोधि
 
-**Autonomous Multi-Agent AI for Indian Agriculture**
+> **Kisan-Bodhi: Farmer's Intelligence** — An autonomous multi-agent AI system protecting India's 100M+ smallholder farmers from climate-driven agricultural crises.
 
-Protecting India's 100+ million smallholder farmers from climate-driven crises through real-time intelligence, crop protection strategies, and government scheme guidance. Built for **Anant Chakra: Agentic Council** challenge, April 4, 2026.
-
----
-
-## 🎯 Executive Summary
-
-**KISANBODHI** (किसानबोधि / କିସାନବୋଧି = *Farmer's Intelligence*) is a **production-ready, full-stack agentic AI system** featuring:
-
-✅ **5 Autonomous Agents** (Sentinel, Analyst, Advisor, Policy, Orchestrator)
-✅ **Multi-Language Support** (English, Hindi, Odia) 
-✅ **Real-Time Monitoring** (Weather, Markets, Government Schemes)
-✅ **Farmer-Centric Design** (Mobile-optimized, simple UX)
-✅ **Government Integration** (NITI Aayog policy alignment, SDG mapping)
-✅ **Zero Lovable Watermarks** (100% independent, clean codebase)
-✅ **Deploy-Ready** (Vercel Frontend + Render Backend)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![SDG Aligned](https://img.shields.io/badge/UN%20SDG-1%2C2%2C8%2C13-blue)]()
+[![Portfolio](https://img.shields.io/badge/Portfolio-Takshashila%20Institution-orange)]()
+[![Team](https://img.shields.io/badge/Team-IQ%20Zero-purple)]()
 
 ---
 
-## 🏗️ Architecture Overview
+## 🎯 What is KISANBODHI?
 
-### **Frontend Stack**
-```
-React 18 + TypeScript + Vite
-├── Components (shadcn/ui + Radix)
-├── Multi-language i18n (i18next)
-├── Authentication (JWT + Context API)
-├── Responsive Design (Tailwind CSS)
-└── Animations (Framer Motion)
-```
+KISANBODHI is a **multi-agent AI disaster-response and advisory system** built for Indian smallholder farmers. It autonomously monitors weather, analyzes crop risks, recommends government schemes, and generates governance-ready policy briefs — all in **English, Hindi (हिन्दी), and Odia (ଓଡ଼ିଆ)**.
 
-**Deployment:** Vercel (auto-deploy from GitHub)
+Unlike chatbots or simple wrappers, KISANBODHI uses **five specialized AI agents** that reason, coordinate, and adapt to real-time crisis scenarios without constant human input.
 
-### **Backend Stack**
-```
-Node.js + Express + TypeScript
-├── API Routes (Auth, Agent, Farmer, Schemes)
-├── CrewAI Integration (Multi-agent orchestration)
-├── Services (Weather, Market, News, Schemes)
-├── Agents (Sentinel, Analyst, Advisor, Policy, Orchestrator)
-└── Middleware (Auth, Logging, Error Handling)
-```
+### 🏛️ Policy Alignment: Takshashila Institution
 
-**Deployment:** Render/Railway/Heroku
-
-### **Multi-Agent System**
-
-```
-User Query
-    ↓
-Orchestrator Agent
-    ├→ Sentinel Agent (Weather + News + Markets)
-    ├→ Analyst Agent (Risk Scoring + Loss Prediction)
-    ├→ Advisor Agent (Farmer Guidance + Schemes)
-    └→ Policy Agent (SDG Mapping + Governance)
-    ↓
-Consolidated Response
-    ├── Hazard Level & Alerts
-    ├── Risk Score (1-10)
-    ├── Actionable Recommendations
-    ├── Applicable Government Schemes
-    └── UN SDG Alignment
-```
+KISANBODHI operates through the **Takshashila Institution governance framework**, incorporating:
+- **Samaaj-Sarkaar-Bazaar** balanced regulatory lens (Society-Government-Market)
+- **Light-touch regulation** favoring voluntary compliance and innovation
+- **Strategic autonomy** with focus on indigenous AI capabilities
+- **Data sovereignty** with farmer data remaining at state/district level
+- **Competitive market** participation at every AI value-chain stage
 
 ---
 
-## 🚀 Quick Start (4-Step Setup)
+## 🏗️ System Architecture
 
-### **Step 1: Install Dependencies**
+```
+┌──────────────────────────────────────────────────────────────┐
+│                    ORCHESTRATOR AGENT                         │
+│          Hierarchical coordination & dynamic re-planning     │
+├──────────┬──────────┬──────────────┬────────────────────────┤
+│          │          │              │                          │
+▼          ▼          ▼              ▼                          │
+┌────────┐ ┌────────┐ ┌──────────┐ ┌──────────┐               │
+│SENTINEL│ │ANALYST │ │ ADVISOR  │ │ POLICY   │               │
+│ Agent  │ │ Agent  │ │  Agent   │ │  Agent   │               │
+├────────┤ ├────────┤ ├──────────┤ ├──────────┤               │
+│Weather │ │Crop    │ │Farmer    │ │SDG       │               │
+│Markets │ │Loss    │ │Action    │ │Mapping   │               │
+│News    │ │Income  │ │Plans     │ │Governance│               │
+│Alerts  │ │Risk    │ │Schemes   │ │Briefs    │               │
+└────────┘ └────────┘ └──────────┘ └──────────┘               │
+     │          │          │              │                     │
+     └──────────┴──────────┴──────────────┘                    │
+                        │                                      │
+              ┌─────────▼──────────┐                           │
+              │ CRISIS MODE TOGGLE │ ← Real-time re-planning  │
+              └────────────────────┘                           │
+└──────────────────────────────────────────────────────────────┘
+```
 
+### The Five Agents
+
+| Agent | Role | Tools Used |
+|-------|------|-----------|
+| **🛰️ Sentinel** | Real-time weather, market price, & news monitoring | OpenWeatherMap, eNAM, News APIs |
+| **📊 Analyst** | Crop-loss probability modeling & income-risk scoring | Statistical models, historical data |
+| **🧑‍🌾 Advisor** | Personalized farmer guidance with scheme recommendations | PMFBY, PM-KISAN, eNAM matching |
+| **📜 Policy** | SDG mapping & governance-ready briefs | Takshashila governance framework |
+| **🧠 Orchestrator** | Hierarchical coordination & crisis re-planning | Task decomposition, agent routing |
+
+---
+
+## 🌍 SDG Alignment
+
+| SDG | Target | KISANBODHI Contribution |
+|-----|--------|------------------------|
+| **SDG 1** | No Poverty (1.1, 1.2) | Income protection through crop risk management |
+| **SDG 2** | Zero Hunger (2.1, 2.3, 2.4) | Reduced crop losses, sustainable food production |
+| **SDG 8** | Decent Work (8.2, 8.3) | Agricultural modernization, rural employment |
+| **SDG 13** | Climate Action (13.1, 13.3) | Climate resilience, early warning systems |
+| **SDG 17** | Partnerships (17.17) | Multi-stakeholder AI coordination |
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Framework:** React 18 + TypeScript + Vite
+- **UI:** TailwindCSS + Radix UI + Framer Motion
+- **State:** TanStack React Query
+- **i18n:** react-i18next (English, Hindi, Odia)
+- **Charts:** Recharts
+
+### Backend
+- **Runtime:** Node.js + Express + TypeScript
+- **Architecture:** 5-Agent Hierarchical System
+- **APIs:** OpenWeatherMap, eNAM Market Data, News aggregation
+- **Data:** Government scheme matching (PMFBY, PM-KISAN, eNAM)
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+ 
+- npm or bun
+
+### 1. Install & Run Frontend
 ```bash
-# Frontend (root folder)
+cd KISANBODHI
 npm install
+npm run dev
+# Frontend runs at http://localhost:5173
+```
 
-# Backend
+### 2. Install & Run Backend
+```bash
 cd backend
 npm install
-```
-
-### **Step 2: Environment Setup**
-
-**Frontend** - Create `.env`:
-```
-VITE_API_URL=http://localhost:3001
-VITE_APP_NAME=KISANBODHI
-```
-
-**Backend** - Create `.env`:
-```
-PORT=3001
-NODE_ENV=development
-CORS_ORIGIN=http://localhost:5173
-WEATHER_API_KEY=your_openweather_key
-NEWS_API_KEY=your_news_api_key
-JWT_SECRET=your-super-secret-jwt-key-change-in-prod
-```
-
-### **Step 3: Run Locally**
-
-**Terminal 1 - Frontend (Port 5173):**
-```bash
 npm run dev
+# Backend API runs at http://localhost:3001
 ```
 
-**Terminal 2 - Backend (Port 3001):**
+### 3. Environment Setup
+Copy the example env and configure API keys (optional — mock data works without keys):
 ```bash
-cd backend
-npm run dev
+cp backend/.env.example backend/.env
 ```
 
-### **Step 4: Test**
-
-Open **http://localhost:5173** and login with:
+### Demo Credentials
 ```
 Email: farmer@example.com
 Password: password
-District: Kendrapara (or any Odisha district)
-Language: English / हिंदी / ଓଡିଆ
 ```
-
-Type a query: *"Heavy rainfall warning in my area - what do I do?"*
-
-✅ You'll see live agent responses with recommendations!
 
 ---
 
-## 📁 Project Structure
+## 📱 Features
+
+### 👨‍🌾 Farmer View (Voice-First)
+- **Voice Input** — Tap-to-speak interface in local languages
+- **Real-time Alerts** — Weather warnings, flood/cyclone alerts
+- **Action Plans** — Step-by-step guidance for crisis response
+- **Scheme Matching** — Automatically matched government schemes
+- **Multilingual** — Full interface in English, Hindi, and Odia
+
+### 🛠️ Developer View
+- **Agent Terminal** — Real-time multi-agent orchestration logs
+- **Crisis Simulator** — Inject crisis scenarios and watch agents re-plan
+- **Dashboard** — Query agents directly, view structured outputs
+
+### 🚨 Crisis Mode
+- **Live Re-planning** — Agents automatically adapt to new crisis inputs
+- **Scenario Injection** — Toggle crisis mode to stress-test the system
+- **Resilient Architecture** — Mock data fallback when APIs are unavailable
+
+---
+
+## 📂 Project Structure
 
 ```
 KISANBODHI/
-├── src/                          # Frontend React App
-│   ├── components/
-│   │   ├── Navbar.tsx            # Navigation with language selector
-│   │   ├── ProtectedRoute.tsx    # Auth guard
-│   │   ├── AgentSidebar.tsx      # Agent status display
-│   │   ├── FarmerDashboard.tsx   # Main dashboard
-│   │   └── ChatWidget.tsx        # Query interface
-│   ├── pages/
-│   │   ├── Landing.tsx           # Hero / CTA
-│   │   ├── Login.tsx             # User login
-│   │   ├── Register.tsx          # Signup with district selection
-│   │   ├── Dashboard.tsx         # Main app interface
-│   │   └── NotFound.tsx
-│   ├── contexts/
-│   │   └── AuthContext.tsx       # Global auth state
-│   ├── i18n/
-│   │   ├── config.ts             # i18next setup
-│   │   └── locales/
-│   │       ├── en.json           # English translations
-│   │       ├── hi.json           # Hindi translations
-│   │       └── or.json           # Odia translations
-│   ├── hooks/
-│   │   └── useApi.ts             # API client hook
-│   ├── services/
-│   │   └── api.client.ts         # HTTP client
-│   ├── types/
-│   │   └── index.ts              # TypeScript types
-│   └── App.tsx
-│
-├── backend/                      # Express Server
-│   ├── src/
-│   │   ├── server.ts             # Entry point
-│   │   ├── agents/
-│   │   │   ├── sentinel.agent.ts  # Weather/News monitoring
-│   │   │   ├── analyst.agent.ts   # Risk modeling
-│   │   │   ├── advisor.agent.ts   # Recommendations
-│   │   │   ├── policy.agent.ts    # SDG/Governance
-│   │   │   ├── orchestrator.agent.ts # Coordinator
-│   │   │   └── index.ts
-│   │   ├── api/
-│   │   │   └── routes.ts         # API endpoints
-│   │   ├── services/
-│   │   │   ├── weather.service.ts
-│   │   │   ├── market.service.ts
-│   │   │   ├── news.service.ts
-│   │   │   └── scheme.service.ts
-│   │   ├── middleware/
-│   │   │   └── auth.ts           # JWT verification
-│   │   ├── types/
-│   │   │   └── index.ts
-│   │   └── utils/
-│   │       └── helpers.ts
-│   ├── package.json
-│   └── tsconfig.json
-│
-├── public/
-├── vite.config.ts
+├── src/                      # Frontend (React + TypeScript)
+│   ├── pages/                # Landing, Login, Register, Dashboard
+│   ├── components/           # FarmerDashboard, Navbar, ChatWidget
+│   ├── contexts/             # AuthContext
+│   ├── hooks/                # useApi (React Query hooks)
+│   ├── services/             # API client
+│   ├── i18n/locales/         # en.json, hi.json, or.json
+│   └── types/                # TypeScript interfaces
+├── backend/                  
+│   └── src/
+│       ├── agents/           # 5 specialized agents
+│       │   ├── orchestrator.agent.ts
+│       │   ├── sentinel.agent.ts
+│       │   ├── analyst.agent.ts
+│       │   ├── advisor.agent.ts
+│       │   └── policy.agent.ts
+│       ├── services/         # Weather, Market, News, Scheme services
+│       ├── api/              # Express routes
+│       └── types/            # Shared types
+├── index.html
 ├── package.json
-├── README.md
-├── LICENSE
-└── .gitignore
+└── README.md
 ```
 
 ---
 
-## 🔐 Authentication Flow
+## 🔌 API Endpoints
 
-**User Registration → Login → JWT Token → Protected Routes**
-
-1. **Register** with email, password, district, language preference
-2. **Login** returns JWT token (expires in 7 days)
-3. **Token stored** in localStorage
-4. **Protected routes** wrapped with `<ProtectedRoute>`
-5. **API requests** include `Authorization: Bearer <token>`
-6. **Logout** clears token
-
----
-
-## 🌐 API Endpoints
-
-### **Authentication**
-```
-POST /api/auth/register
-POST /api/auth/login
-POST /api/auth/logout
-GET /api/auth/me
-```
-
-### **Agent System**
-```
-POST /api/agent/query                    # Process farmer query
-GET /api/agent/history                   # Get query history
-POST /api/agent/crisis-response          # Crisis mode (stress test)
-```
-
-### **Farmer Services**
-```
-GET /api/farmer/profile                  # Get farmer details
-PUT /api/farmer/profile                  # Update profile
-GET /api/farmer/alerts                   # Personalized alerts
-GET /api/farmer/schemes                  # Applicable schemes
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/analysis` | District-level multi-agent analysis |
+| `POST` | `/api/advisory` | Personalized farmer advisory |
+| `POST` | `/api/crisis` | Emergency crisis response |
+| `GET` | `/api/agents` | All agents status |
+| `GET` | `/api/health` | System health check |
+| `GET` | `/api/tasks` | Active tasks |
+| `GET` | `/api/task/:id` | Task status & result |
+| `POST` | `/api/demo` | Generate demo data |
 
 ---
 
-## 🤖 How the Agent System Works
+## 📝 Abstract (199 words)
 
-### **Example: Flood Alert Query**
-
-**Input:**
-```
-"Heavy rainfall warning for Kendrapara district. 50 acres of paddy crop. What should I do?"
-```
-
-**Agent Pipeline:**
-
-1. **Sentinel** →
-   ```json
-   {
-     "weather_alert": "Heavy rainfall (95mm expected in 48 hrs)",
-     "hazard_signal": "HIGH",
-     "probability": 0.85
-   }
-   ```
-
-2. **Analyst** →
-   ```json
-   {
-     "risk_score": 8/10,
-     "crop_loss_probability": 0.70,
-     "income_impact": "₹45,000 potential loss"
-   }
-   ```
-
-3. **Advisor** →
-   ```json
-   {
-     "recommendations": [
-       "Begin harvesting paddy immediately", 
-       "Cover remaining crops with plastic sheets",
-       "Move livestock to safer areas"
-     ],
-     "urgency": "CRITICAL"
-   }
-   ```
-
-4. **Policy** →
-   ```json
-   {
-     "applicable_schemes": ["PMFBY", "PM-KISAN", "Disaster Relief"],
-     "sdg_alignment": ["SDG 1: No Poverty", "SDG 2: Zero Hunger", "SDG 13: Climate Action"],
-     "next_steps": "File insurance claim within 72 hours"
-   }
-   ```
-
-**Output:** Comprehensive response with all four perspectives!
+> KISANBODHI (Kisan-Bodhi: Farmer's Intelligence) is an autonomous multi-agent AI system designed to protect India's smallholder farmers from climate-driven agricultural crises. Operating through the Takshashila Institution governance framework with its Samaaj-Sarkaar-Bazaar regulatory lens, the system deploys five specialised agents — Sentinel, Analyst, Advisor, Orchestrator, and Policy — coordinated through a hierarchical framework. The Sentinel agent continuously monitors live weather feeds, market price streams, and news events. The Analyst agent performs crop-loss probability modelling and income-risk scoring at the district level. The Advisor agent generates actionable farmer-facing guidance matched to applicable government schemes such as PMFBY, eNAM, and PM-KISAN. The Policy agent auto-maps outcomes to UN SDG targets and produces governance-ready briefs aligned with Takshashila's light-touch regulation and strategic autonomy principles. KISANBODHI supports dynamic re-planning in response to new crisis inputs, making it robust to unexpected scenarios. The system advances SDG 1 (No Poverty), SDG 2 (Zero Hunger), SDG 8 (Decent Work), and SDG 13 (Climate Action), with direct applicability across India's 100 million smallholder farming households.
 
 ---
 
-## 🌍 Multi-Language Support
+## 📋 Policy Brief (Takshashila Institution Perspective)
 
-Fully localized for:
-- **English** - अंग्रेजी
-- **हिंदी** - Hindi (National language)
-- **ଓଡିଆ** - Odia (Odisha state language)
+**Problem in Context:** India loses ₹50,000 crore annually to agricultural disasters. Over 86% of farmers are smallholders with no access to real-time decision support. Existing government alert systems are unidirectional, not advisory. The gap between early warning and farmer action is the single biggest preventable loss driver.
 
-**Switch languages:** Navbar dropdown or programmatically:
-```javascript
-i18n.changeLanguage('or');  // Odia
-localStorage.setItem('language', 'hi');  // Hindi
-```
+**Key Deployment Risks:** 
+- Algorithmic bias in crop-loss modelling if training data skews toward better-documented districts
+- Over-reliance on AI recommendations by semi-literate users without fallback human oversight
+- Data sovereignty risks when farmer profiles are stored in centralised cloud systems
 
----
+**Stakeholder Analysis:** 
+- **Primary** — Smallholder farmers, district agricultural officers
+- **Secondary** — State governments, crop insurance companies, commodity exchanges
+- **Tertiary** — International food security bodies (FAO, WFP)
 
-## 📱 Farmer-Centric Design
+**Takshashila Institution's Stance:**
+Applying the Samaaj-Sarkaar-Bazaar framework, Takshashila recommends:
+- **Samaaj (Society):** Community-driven data collection with farmer-owned profiles
+- **Sarkaar (Government):** Light-touch regulation enabling voluntary AI adoption without rigid mandates
+- **Bazaar (Market):** Competitive market for agricultural AI services preventing monopolistic capture
 
-✅ **Mobile-First** - Optimized for phones & low bandwidth
-✅ **Simple Language** - No jargon, practical guidance
-✅ **Visual Hierarchy** - Risk scores, colored alerts
-✅ **Fast Loading** - Assets cached, minimal animations on mobile
-✅ **Offline Support** - LocalStorage for basic functionality
-✅ **Accessibility** - ARIA labels, readable fonts
+**Policy Recommendations:**
+1. Phased district-level pilot rollouts with competitive vendor participation
+2. Federated data architecture — farmer profiles remain at state level (data sovereignty)
+3. Voluntary compliance frameworks with transparent AI auditing
+4. Integration with existing Kisan Suvidha app infrastructure
+5. Quarterly SDG-aligned impact assessment and public reporting
 
----
-
-## 🏆 UN Sustainable Development Goals Alignment
-
-**KISANBODHI directly contributes to:**
-
-| SDG | Target | How KISANBODHI Helps |
-|-----|--------|----------------------|
-| **SDG 1** | No Poverty | Income protection through crop loss prevention |
-| **SDG 2** | Zero Hunger | Food security via production safeguards |
-| **SDG 8** | Decent Work | Rural employment preservation |
-| **SDG 13** | Climate Action | Weather adaptation & resilience |
-| **SDG 15** | Life on Land | Sustainable agricultural practices |
+**Current Limitations:** Prototype relies on public APIs with rate limits; production deployment requires direct MoU with IMD and NABARD. Language localisation to additional vernaculars needed for pan-India accessibility.
 
 ---
 
-## 🚢 Deployment Guide
+## 👥 Team IQ Zero
 
-### **Frontend → Vercel**
+Built for **Anant Chakra: Agentic Council** at **Chakravyuh Genesis 2026**, ITER SOA, Bhubaneswar.
 
-```bash
-# 1. Push to GitHub
-git add .
-git commit -m "Production ready KISANBODHI"
-git push origin main
-
-# 2. Go to vercel.com
-# 3. Import GitHub repo
-# 4. Add environment variables:
-#    VITE_API_URL=https://kisanbodhi-backend.onrender.com
-# 5. Deploy!
-```
-
-### **Backend → Render**
-
-```bash
-# backend/
-# 1. Create render.com account
-# 2. New → Web Service → Connect GitHub
-# 3. Select backend folder
-# 4. Set environment variables
-# 5. Deploy!
-```
-
----
-
-## 📊 Performance Metrics
-
-**Frontend:**
-- Build size: ~250 KB (gzipped)
-- Time to interactive: <1.5s
-- Lighthouse score: 95+
-
-**Backend:**
-- Response time: <200ms (avg)
-- Concurrent users: 1000+
-- Database queries: < 50ms
-
----
-
-## 🔒 Security Features
-
-✅ JWT authentication (7-day expiry)
-✅ Password hashing (bcryptjs)
-✅ CORS protection 
-✅ Input validation (Zod)
-✅ SQL injection prevention
-✅ XSS protection (React sanitization)
-✅ Rate limiting (planned)
-✅ HTTPS enforced (production)
-
-**Never commit secrets!** Use `.env` files.
-
----
-
-## 🧪 Testing
-
-### **Manual Testing**
-
-```bash
-# Test login flow
-Email: farmer@example.com
-Password: password
-
-# Test agent query
-Query: "When should I harvest my paddy crop?"
-
-# Test language switching
-Navbar → Language selector → हिंदी / ଓଡିଆ / English
-
-# Test mobile view
-Browser DevTools → Device toolbar
-```
-
-### **API Testing (cURL)**
-
-```bash
-# Get auth token
-curl -X POST http://localhost:3001/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"farmer@example.com","password":"password"}'
-
-# Query agent
-curl -X POST http://localhost:3001/api/agent/query \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"query":"Flood alert in my area"}'
-```
-
----
-
-## 🐛 Troubleshooting
-
-### **Frontend won't start?**
-```bash
-npm install --legacy-peer-deps
-npm run dev
-```
-
-### **Backend port already in use?**
-```bash
-# Change PORT in .env or:
-PORT=3002 npm run dev
-```
-
-### **i18n translations missing?**
-```bash
-# Check i18n/locales/ files exist
-ls src/i18n/locales/
-```
-
-### **API CORS error?**
-```bash
-# Backend .env must have:
-CORS_ORIGIN=http://localhost:5173  # (or your frontend URL)
-```
-
----
-
-## 📞 Support & Contact
-
-**Technical Issues:**
-- Check backend logs: `npm run dev` output
-- Check frontend: Browser DevTools (F12)
-- See API responses: Network tab
-
-**Team Info:**
-- **Team Name:** IQ Zero
-- **Project:** KISANBODHI
-- **Challenge:** Anant Chakra: Agentic Council
-- **Date:** April 4, 2026
-- **Venue:** ITER, Odisha
+**Portfolio:** Takshashila Institution
 
 ---
 
 ## 📄 License
 
-MIT License - Free to use, modify, deploy
-
----
-
-## 🎉 Success Criteria (Anant Chakra)
-
-✅ **Live Agent Demo** - Real-time multi-agent responses
-✅ **System Explanation** - Clear architecture walkthrough
-✅ **Abstract** - 150-200 words (meeting submission requirements)
-✅ **Policy Brief** - Risk analysis, stakeholders, recommendations
-✅ **SDG Alignment** - Mapped to SDG 1, 2, 8, 13
-✅ **Crisis Adaptation** - Prepared for real-time scenario changes
-
----
-
-**KISANBODHI: Protecting India's Farmers, Powered by AI, Aligned with Policy** 🌾🤖
-
-Made with ❤️ for 100+ Million Smallholder Farmers
+MIT License — see [LICENSE](LICENSE) for details.

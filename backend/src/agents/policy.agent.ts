@@ -8,7 +8,7 @@ import {
 /**
  * POLICY AGENT
  * Auto-maps outcomes to UN SDG targets and produces governance-ready briefs
- * Provides actionable insights for policy makers and NITI Aayog
+ * Provides actionable insights for policy makers through Takshashila Institution's governance lens
  *
  * Responsibilities:
  * - SDG target mapping
@@ -268,11 +268,11 @@ RECOMMENDATION PRIORITY: HIGH for scaling across all districts
   ): PolicyRecommendation[] {
     const recommendations: PolicyRecommendation[] = [];
 
-    // NITI Aayog level
+    // Takshashila Institution level — Samaaj-Sarkaar-Bazaar framework
     recommendations.push({
-      title: "Scale KISANBODHI Nationwide",
-      description: `Expand autonomous agricultural advisory system to all 757 districts covering 100 million smallholder farmers. Current success in ${district} demonstrates 15-25% income improvement and significant climate adaptation.`,
-      targetAudience: "niti-aayog",
+      title: "Scale KISANBODHI Nationwide via Light-Touch Governance",
+      description: `Expand autonomous agricultural advisory system to all 757 districts covering 100 million smallholder farmers. Takshashila recommends phased rollout with competitive market participation, district-level data sovereignty, and voluntary compliance frameworks. Current success in ${district} demonstrates 15-25% income improvement.`,
+      targetAudience: "takshashila-institution",
       priority: "high",
       estimatedImpact:
         "₹5+ trillion annual economic benefit to rural communities",
@@ -301,7 +301,7 @@ RECOMMENDATION PRIORITY: HIGH for scaling across all districts
       title: "Link with Insurance Companies",
       description:
         "Integrate PMFBY claims process with KISANBODHI alert system for faster claim settlement. Use risk data for premium optimization and loss prediction.",
-      targetAudience: "niti-aayog",
+      targetAudience: "takshashila-institution",
       priority: "medium",
       estimatedImpact: "40% faster claim settlement; 20% premium reduction",
     });
