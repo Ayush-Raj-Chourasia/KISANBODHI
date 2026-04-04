@@ -46,7 +46,7 @@ Unlike chatbots or simple AI wrappers, KISANBODHI deploys **five specialized AI 
 | **Tool Integration** | Real OpenWeatherMap API, Serper.dev news search, government scheme databases |
 | **Hierarchical Coordination** | Orchestrator decomposes queries, routes to agents, assembles outputs, retries if incomplete |
 | **Dynamic Re-Planning** | Crisis Mode toggle injects new scenarios mid-execution — agents re-route automatically |
-| **Memory & Context** | Short-term conversation memory + long-term vector store (ChromaDB architecture) |
+| **Memory & Context** | Real-time localStorage caching & offline mode recovery + district-level federated data |
 
 ---
 
@@ -55,8 +55,7 @@ Unlike chatbots or simple AI wrappers, KISANBODHI deploys **five specialized AI 
 ```
                     ┌──────────────────────────────┐
                     │     Farmer Query / Input      │
-                    │  "Flood warning, Kendrapara,  │
-                    │         50 acres paddy"       │
+                    │  (Web, Chatbot, or Voice Call)│
                     └──────────────┬───────────────┘
                                    │
                     ┌──────────────▼───────────────┐
@@ -70,19 +69,11 @@ Unlike chatbots or simple AI wrappers, KISANBODHI deploys **five specialized AI 
               │ SENTINEL  │ │ANALYST │ │ADVISOR│ │POLICY  │
               │           │ │        │ │       │ │        │
               │ Weather   │ │Crop    │ │Farmer │ │SDG     │
-              │ Markets   │ │Loss    │ │Action │ │Mapping │
-              │ News      │ │Risk    │ │Plans  │ │Gov     │
-              │ Alerts    │ │Income  │ │Schemes│ │Briefs  │
+              │ Markets   │ │News    │ │Plans  │ │Briefs  │
+              │ Alerts    │ │Income  │ │Schemes│ │Gov     │
               └─────┬─────┘ └───┬────┘ └──┬────┘ └──┬─────┘
                     │           │         │         │
                     └───────────┴─────────┴─────────┘
-                                   │
-                    ┌──────────────▼───────────────┐
-                    │   CRISIS MODE TOGGLE          │
-                    │   Real-time re-planning       │
-                    │   Inject: Flood → Cyclone,    │
-                    │   API Failure, Bias Flag      │
-                    └──────────────┬───────────────┘
                                    │
               ┌────────────────────┴────────────────────┐
               │                                         │
@@ -91,18 +82,60 @@ Unlike chatbots or simple AI wrappers, KISANBODHI deploys **five specialized AI 
     │ Harvest early,     │              │ SDG 1.5, SDG 2.4,       │
     │ file PMFBY claim,  │              │ SDG 13.1 aligned,       │
     │ call 1800-XXX      │              │ Takshashila governance   │
-    └────────────────────┘              └──────────────────────────┘
+    └─────────┬─────────┘              └──────────────────────────┘
+              │
+    ┌─────────▼─────────────┐
+    │ Omnichannel Delivery  │
+    │ - Dashboard UI        │
+    │ - Landing Chatbot     │
+    │ - TwiML Voice Call    │
+    │ - Twilio SMS alerts   │
+    └───────────────────────┘
 ```
 
 ### The Five Agents
 
 | Agent | Role | Data Sources | Output |
 |-------|------|--------------|--------|
-| **🛰️ Sentinel** | Real-time environmental monitoring | OpenWeatherMap API, Serper.dev News, eNAM market data | Weather alerts, market prices, agricultural news events |
+| **🛰️ Sentinel** | Real-time environmental monitoring | OpenWeatherMap API, Serper.dev News | Weather alerts, market prices, agricultural news events |
 | **📊 Analyst** | Quantitative risk assessment | Statistical crop-loss models, historical yield data | Risk scores (1-10), crop-loss probability, income projections |
-| **🧑‍🌾 Advisor** | Personalized farmer guidance | Government scheme databases (PMFBY, PM-KISAN, eNAM, KCC) | Step-by-step action plans, scheme recommendations, helpline numbers |
+| **🧑‍🌾 Advisor** | Personalized farmer guidance | Government databases (PMFBY, PM-KISAN, eNAM) | Step-by-step action plans, scheme recommendations |
 | **📜 Policy** | Governance & SDG alignment | Takshashila Institution governance framework | SDG-mapped policy briefs, stakeholder reports, governance outcomes |
 | **🧠 Orchestrator** | Hierarchical coordination | All agent outputs | Consolidated insights, retry logic, crisis re-planning |
+
+---
+
+## 📞 Feature Phone Scalability: The IVR Voice Integration
+
+*Judges: This is our architectural MVP for India's 400M+ feature phone users.*
+
+The core AI engine is fully decoupled from the React frontend, allowing it to serve voice calls using Twilio's Telecom APIs. 
+
+**The Flow:**
+1. A farmer dials the KISANBODHI toll-free baseline.
+2. The `POST /api/ivr/welcome` Twilio Webhook answers: *"Press 1 for English, 2 for Hindi, 3 for Odia."*
+3. The farmer speaks their problem (e.g., *"My paddy field is flooded"*).
+4. Twilio's Speech-to-Text API converts the audio to text and calls our `POST /api/ivr/process` endpoint.
+5. The **Orchestrator Agent** processes the query, talks to the Analyst and Advisor agents, and generates a solution.
+6. The AI literally reads the advice back to the farmer over the phone using Text-to-Speech (TTS).
+7. An automated SMS is instantly sent with relevant scheme links (e.g., PMFBY.gov.in).
+
+### How to Configure Twilio for Live Testing
+To connect the backend to your live Twilio account:
+1. Go to Twilio console > **Phone Numbers** > **Manage** > **Active Numbers**.
+2. Click your active phone number.
+3. Scroll down to **Voice & Fax**.
+4. Set "A CALL COMES IN" to **Webhook** -> **`https://kisanbodhi-backend-production.up.railway.app/api/ivr/welcome`** -> **POST**.
+5. Set "Messaging" -> "A MESSAGE COMES IN" to Webhook -> (leave default or point to a message handler if needed). *SMS alerts are sent autonomously by the webhook.*
+
+---
+
+## 📴 Robust Offline Caching (Zero-Internet Access)
+
+To combat rural connectivity drops, the frontend utilizes **Proactive LocalStorage Caching**:
+- **On Success:** Every dashboard API response is cached in `localStorage` in real-time.
+- **On Network Disconnect:** If the Vercel app loses internet access (or the Railway backend hangs), the global `window.fetch` intercepts the error, immediately pulls the last-known state from `localStorage`, and injects it into the UI.
+- **Visual Warning:** A **Yellow "⚠️ Offline Mode: Showing last known data" Badge** appears right below the navbar, with a timestamp of the last successful sync.
 
 ---
 
@@ -139,52 +172,31 @@ KISANBODHI operates through the **Takshashila Institution governance framework**
 - **eNAM** and **PMFBY** integration for market transparency
 - Data sovereignty — farmer profiles remain at state/district level
 
-### Key Policy Recommendations
-1. Phased district-level pilot rollouts with competitive vendor participation
-2. Federated data architecture — farmer profiles remain at state level
-3. Voluntary compliance frameworks with transparent AI auditing
-4. Integration with Kisan Suvidha app infrastructure
-5. Quarterly SDG-aligned impact assessment with public reporting
-
 ---
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-| Technology | Purpose |
-|-----------|---------|
-| **React 18** + TypeScript | Component architecture |
-| **Vite** | Build tool & dev server |
-| **TailwindCSS** | Utility-first styling |
-| **Radix UI** | Accessible component primitives |
-| **Framer Motion** | Scroll-triggered animations |
-| **react-i18next** | Trilingual support (EN, हिंदी, ଓଡ଼ିଆ) |
-| **TanStack React Query** | Server state management |
-| **Recharts** | Data visualization |
+- **React 18** + TypeScript (Component architecture)
+- **Vite** (Build tool)
+- **TailwindCSS** + **Radix UI** + **Framer Motion** (Styles & Animation)
+- **react-router-dom** (SPA Routing with Vercel rewrites)
 
 ### Backend
-| Technology | Purpose |
-|-----------|---------|
-| **Node.js** + Express | API server |
-| **TypeScript** | Type-safe agent logic |
-| **5-Agent Architecture** | Hierarchical multi-agent system |
-| **OpenWeatherMap API** | Live weather data for Sentinel |
-| **Serper.dev API** | Google News search for alerts |
-| **In-memory auth** | JWT-based demo authentication |
+- **Node.js** + Express
+- **5-Agent Hierarchical Architecture**
+- **Twilio Voice & SMS APIs** (IVR)
+- **OpenWeatherMap API** + **Serper.dev API** (Live RAG contexts)
 
 ### Deployment
-| Platform | Service |
-|----------|---------|
-| **Vercel** | Frontend hosting ([kisanbodhi.vercel.app](https://kisanbodhi.vercel.app)) |
-| **Railway** | Backend API ([kisanbodhi-backend-production.up.railway.app](https://kisanbodhi-backend-production.up.railway.app)) |
+| Platform | Service | Status | URL |
+|----------|---------|--------|-----|
+| **Vercel** | Frontend hosting | Passing ✅ | [kisanbodhi.vercel.app](https://kisanbodhi.vercel.app) |
+| **Railway** | Backend API | Healthy ✅ | [kisanbodhi-backend-production.up.railway.app](https://kisanbodhi-backend-production.up.railway.app) |
 
 ---
 
 ## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 18+
-- npm or bun
 
 ### 1. Clone & Install
 ```bash
@@ -205,8 +217,12 @@ npm install
 ```env
 PORT=3001
 NODE_ENV=development
-WEATHER_API_KEY=your_openweathermap_key    # Free: openweathermap.org/api
-NEWS_API_KEY=your_serper_api_key           # Free: serper.dev
+WEATHER_API_KEY=your_openweathermap_key
+NEWS_API_KEY=your_serper_api_key
+GEMINI_API_KEY=your_gemini_key
+TWILIO_ACCOUNT_SID=your_twilio_sid
+TWILIO_AUTH_TOKEN=your_twilio_token
+TWILIO_WHATSAPP_NUMBER=+1234567890
 ```
 
 **Frontend** (`.env.production`):
@@ -214,160 +230,39 @@ NEWS_API_KEY=your_serper_api_key           # Free: serper.dev
 VITE_API_URL=https://kisanbodhi-backend-production.up.railway.app
 ```
 
-### 3. Run Locally
-```bash
-# Terminal 1: Backend (port 3001)
-cd backend && npm run dev
-
-# Terminal 2: Frontend (port 5173)
-npm run dev
-```
-
-### 4. Demo Credentials
-```
-Email: farmer@example.com
-Password: password
-```
-
 ---
 
 ## 📱 Features
 
-### 👨‍🌾 Farmer View (Voice-First)
-- **Voice Input** — Tap-to-speak interface in local languages
-- **Real-time Alerts** — Weather warnings, flood/cyclone alerts from live APIs
-- **Action Plans** — Step-by-step guidance for crisis response
-- **Scheme Matching** — Automatically matched government schemes (PMFBY, PM-KISAN, eNAM, KCC)
-- **Multilingual** — Full interface in English, Hindi (हिंदी), and Odia (ଓଡ଼ିଆ)
+### 👨‍🌾 Farmer Interfaces
+- **Mobile OTP Login:** Log in securely via mobile number and SMS OTP code.
+- **Public Chatbot:** Floating AI Sahayak accessible from the landing page.
+- **IVR Feature Phone Interface:** Toll-free voice AI advisory.
+- **Premium Dashboard:** 7 Live Sections (Alert Banner, Farm Profile, Weather, Agent Status, Quick-action chips, 4-panel response grid, Broadcast ticker).
 
-### 🛠️ Developer View
-- **Agent Terminal** — Real-time multi-agent orchestration logs with color-coded output
-- **Crisis Simulator** — Inject crisis scenarios (cyclone, API failure, bias flag) and watch agents re-plan
-- **Dashboard Query** — Send natural language queries and get structured 4-agent output
-
-### 🚨 Crisis Mode
-- **Live Re-planning** — Agents automatically adapt to new crisis inputs
-- **Scenario Injection** — Toggle between Standard, Memory Mode (offline), and Extreme Threat
-- **Resilient Architecture** — Graceful fallback to mock data when APIs are unavailable
+### 🚨 Outage Resiliency
+- **SPA Rewrites:** Custom `vercel.json` ensures zero 404s on browser refresh.
+- **Offline Strategy:** `localStorage` fallback caches everything natively in the browser.
 
 ---
 
-## 🔌 API Endpoints
+## 🔌 Core API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/health` | System health check (5 agents status) |
-| `POST` | `/api/auth/login` | Authenticate user (returns JWT) |
-| `POST` | `/api/auth/register` | Register new user |
-| `POST` | `/api/agent/query` | **Main** — Natural language query → 4-agent response |
-| `POST` | `/api/analysis` | District-level multi-agent analysis |
-| `POST` | `/api/advisory` | Personalized farmer advisory |
-| `POST` | `/api/crisis` | Emergency crisis response |
-| `GET` | `/api/agents` | All agents status |
-| `GET` | `/api/tasks` | Active orchestration tasks |
-| `GET` | `/api/task/:id` | Task status & result |
-| `POST` | `/api/demo` | Generate demo analysis data |
+| `POST` | `/api/auth/send-otp` | Sends login OTP via Twilio SMS |
+| `POST` | `/api/auth/verify-otp` | Validates OTP and returns JWT |
+| `POST` | `/api/chat` | Public chatbot queries without Auth |
+| `POST` | `/api/agent/query` | **Main** — Authenticated Natural language query → 4-agent response |
+| `POST` | `/api/ivr/welcome` | Twilio Voice Webhook: Primary TwiML Menu |
+| `POST` | `/api/ivr/gather` | Twilio Voice Webhook: STT Processing |
+| `POST` | `/api/ivr/process` | Twilio Voice Webhook: Agent Response & SMS triggering |
+| `GET`  | `/api/health` | System health check (5 agents status) |
 
-### Example: Agent Query
+### Example: Checking IVR Status
 ```bash
-curl -X POST https://kisanbodhi-backend-production.up.railway.app/api/agent/query \
-  -H "Content-Type: application/json" \
-  -d '{"query": "Flood warning in Kendrapara, 50 acres paddy", "context": {"district": "Kendrapara"}}'
+curl https://kisanbodhi-backend-production.up.railway.app/api/ivr/status
 ```
-
-**Response:**
-```json
-{
-  "status": "success",
-  "agents_output": {
-    "sentinel": { "weather_alert": "Temperature 28.5°C, Humidity 85%", "hazard_signal": "high" },
-    "analyst": { "risk_score": 7, "crop_loss_probability": 0.65 },
-    "advisor": { "recommendations": ["Harvest early", "File PMFBY claim", "Move livestock"] },
-    "policy": { "sdg_alignment": ["SDG 1: No Poverty", "SDG 13: Climate Action"], "applicable_schemes": ["PMFBY", "KCC"] }
-  }
-}
-```
-
----
-
-## 📂 Project Structure
-
-```
-KISANBODHI/
-├── src/                          # Frontend (React + TypeScript)
-│   ├── pages/
-│   │   ├── Landing.tsx           # Premium 6-section landing page
-│   │   ├── Login.tsx             # Authentication with demo credentials
-│   │   ├── Register.tsx          # Farmer registration (Odisha districts)
-│   │   ├── Dashboard.tsx         # Agent query interface with 4-panel output
-│   │   ├── FarmerView.tsx        # Voice-first farmer dashboard
-│   │   └── DeveloperView.tsx     # Agent terminal + crisis simulator
-│   ├── components/
-│   │   ├── FarmerDashboard.tsx   # Weather, alerts, schemes, actions
-│   │   ├── AgentSidebar.tsx      # Real-time agent terminal logs
-│   │   ├── ChatWidget.tsx        # AI Sahayak conversational widget
-│   │   └── Navbar.tsx            # Navigation with language switcher
-│   ├── contexts/AuthContext.tsx  # JWT auth with mock fallback
-│   ├── services/api.client.ts   # Backend API client
-│   ├── hooks/useApi.ts          # React Query hooks
-│   ├── i18n/locales/            # en.json, hi.json, or.json
-│   └── types/index.ts           # TypeScript interfaces
-│
-├── backend/
-│   └── src/
-│       ├── agents/
-│       │   ├── orchestrator.agent.ts  # Hierarchical agent coordinator
-│       │   ├── sentinel.agent.ts      # Weather + market + news monitoring
-│       │   ├── analyst.agent.ts       # Crop-loss + income risk modeling
-│       │   ├── advisor.agent.ts       # Farmer guidance + scheme matching
-│       │   └── policy.agent.ts        # Takshashila governance + SDG mapping
-│       ├── services/
-│       │   ├── weather.service.ts     # OpenWeatherMap integration
-│       │   ├── market.service.ts      # eNAM market data
-│       │   ├── news.service.ts        # Serper.dev news search
-│       │   └── scheme.service.ts      # Government scheme database
-│       ├── api/routes.ts              # Express API routes (auth + agents)
-│       └── types/index.ts             # Shared TypeScript types
-│
-├── .env.production                    # Frontend env (Vercel → Railway)
-├── index.html                         # SEO-optimized entry point
-├── package.json
-└── README.md
-```
-
----
-
-## 🧪 Testing & Verification
-
-### Backend API Tests (All Passing ✅)
-```bash
-# Health check
-curl https://kisanbodhi-backend-production.up.railway.app/api/health
-
-# Login
-curl -X POST .../api/auth/login -d '{"email":"farmer@example.com","password":"password"}'
-
-# Agent query (runs all 5 agents)
-curl -X POST .../api/agent/query -d '{"query":"paddy risk Kendrapara"}'
-
-# Crisis response
-curl -X POST .../api/crisis -d '{"district":"Kendrapara","state":"Odisha","crops":["paddy"],"crisisType":"cyclone"}'
-```
-
-### Edge Cases Handled
-- ✅ Backend unreachable → Frontend falls back to mock auth
-- ✅ Weather API key missing → Mock weather data with realistic variation
-- ✅ News API returns empty → Falls back to curated mock news
-- ✅ Agent pipeline fails → Error response with fallback recommendations
-- ✅ Invalid login credentials → Clear error message
-- ✅ Duplicate registration → 409 Conflict response
-- ✅ Empty query submission → Validation error
-
----
-
-## 📝 Abstract (200 words)
-
-> KISANBODHI (Kisan-Bodhi: Farmer's Intelligence) is an autonomous multi-agent AI system designed to protect India's smallholder farmers from climate-driven agricultural crises. Operating through the Takshashila Institution governance framework with its Samaaj-Sarkaar-Bazaar regulatory lens, the system deploys five specialised agents — Sentinel, Analyst, Advisor, Orchestrator, and Policy — coordinated through a hierarchical framework. The Sentinel agent continuously monitors live weather feeds via OpenWeatherMap and agricultural news via Serper.dev. The Analyst agent performs crop-loss probability modelling and income-risk scoring at the district level. The Advisor agent generates actionable farmer-facing guidance matched to applicable government schemes such as PMFBY, eNAM, PM-KISAN, and Kisan Credit Card. The Policy agent auto-maps outcomes to UN SDG targets and produces governance-ready briefs aligned with Takshashila's light-touch regulation and strategic autonomy principles. The system supports three languages (English, Hindi, Odia), dynamic re-planning via crisis mode injection, and graceful degradation when external APIs are unavailable. KISANBODHI advances SDG 1, 2, 8, 11, and 13, with direct applicability across India's 100 million smallholder farming households. Deployed on Vercel (frontend) and Railway (backend).
 
 ---
 
@@ -385,16 +280,9 @@ curl -X POST .../api/crisis -d '{"district":"Kendrapara","state":"Odisha","crops
 ## 🏛️ Competition Details
 
 - **Event:** Anant Chakra: Agentic Council
-- **Festival:** Chakravyuh Genesis 2026
 - **Date:** 4th April 2026
 - **Venue:** ITER SOA, Bhubaneswar
 - **Portfolio:** Takshashila Institution
-
----
-
-## 📄 License
-
-MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
