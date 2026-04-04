@@ -170,7 +170,7 @@ export interface PolicyBrief {
 export interface PolicyRecommendation {
   title: string;
   description: string;
-  targetAudience: "niti-aayog" | "state-govt" | "district-admin" | "ngos";
+  targetAudience: "takshashila-institution" | "state-govt" | "district-admin" | "ngos";
   priority: "high" | "medium" | "low";
   estimatedImpact: string;
 }
