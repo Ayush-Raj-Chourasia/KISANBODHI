@@ -11,6 +11,105 @@ import {
 const router = Router();
 const orchestrator = new OrchestratorAgent();
 
+// ─── In-Memory Auth Store (demo/competition) ───────────────────────────────
+interface UserRecord {
+  id: string;
+  email: string;
+  password: string;
+  name: string;
+  district: string;
+  language: string;
+}
+
+const users: UserRecord[] = [
+  {
+    id: "farmer-001",
+    email: "farmer@example.com",
+    password: "password",
+    name: "Rajesh Kumar",
+    district: "Kendrapara",
+    language: "en",
+  },
+  {
+    id: "farmer-002",
+    email: "kisan@example.com",
+    password: "password",
+    name: "ସୁନୀଲ ମହାନ୍ତି",
+    district: "Puri",
+    language: "or",
+  },
+];
+
+let nextUserId = 3;
+
+function generateToken(userId: string): string {
+  return Buffer.from(JSON.stringify({ userId, iat: Date.now() })).toString("base64");
+}
+
+// ─── Auth Routes ────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/auth/login
+ */
+router.post("/auth/login", (req: Request, res: Response) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password required" });
+  }
+
+  const user = users.find((u) => u.email === email && u.password === password);
+  if (!user) {
+    return res.status(401).json({ error: "Invalid credentials" });
+  }
+
+  res.json({
+    token: generateToken(user.id),
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      district: user.district,
+      language: user.language,
+    },
+  });
+});
+
+/**
+ * POST /api/auth/register
+ */
+router.post("/auth/register", (req: Request, res: Response) => {
+  const { email, password, name, district, language } = req.body;
+  if (!email || !password || !name) {
+    return res.status(400).json({ error: "Email, password, and name are required" });
+  }
+
+  if (users.find((u) => u.email === email)) {
+    return res.status(409).json({ error: "User already exists" });
+  }
+
+  const newUser: UserRecord = {
+    id: `farmer-${String(nextUserId++).padStart(3, "0")}`,
+    email,
+    password,
+    name,
+    district: district || "Khordha",
+    language: language || "en",
+  };
+
+  users.push(newUser);
+
+  res.status(201).json({
+    token: generateToken(newUser.id),
+    user: {
+      id: newUser.id,
+      email: newUser.email,
+      name: newUser.name,
+      district: newUser.district,
+      language: newUser.language,
+    },
+  });
+});
+
 /**
  * POST /api/analysis
  * Request agricultural analysis for a location and crops
