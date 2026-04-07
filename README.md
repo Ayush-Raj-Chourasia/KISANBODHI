@@ -52,46 +52,7 @@ Unlike chatbots or simple AI wrappers, KISANBODHI deploys **five specialized AI 
 
 ## 🏗️ System Architecture
 
-```
-                    ┌──────────────────────────────┐
-                    │     Farmer Query / Input      │
-                    │  (Web, Chatbot, or Voice Call)│
-                    └──────────────┬───────────────┘
-                                   │
-                    ┌──────────────▼───────────────┐
-                    │     ORCHESTRATOR AGENT        │
-                    │   Task decomposition,         │
-                    │   routing, assembly,           │
-                    │   retry on failure             │
-                    └──┬───────┬───────┬───────┬──┘
-                       │       │       │       │
-              ┌────────▼──┐ ┌─▼──────┐ ┌─▼────┐ ┌─▼──────┐
-              │ SENTINEL  │ │ANALYST │ │ADVISOR│ │POLICY  │
-              │           │ │        │ │       │ │        │
-              │ Weather   │ │Crop    │ │Farmer │ │SDG     │
-              │ Markets   │ │News    │ │Plans  │ │Briefs  │
-              │ Alerts    │ │Income  │ │Schemes│ │Gov     │
-              └─────┬─────┘ └───┬────┘ └──┬────┘ └──┬─────┘
-                    │           │         │         │
-                    └───────────┴─────────┴─────────┘
-                                   │
-              ┌────────────────────┴────────────────────┐
-              │                                         │
-    ┌─────────▼─────────┐              ┌───────────────▼──────────┐
-    │ Farmer Advisory    │              │ Policy Brief (auto-gen)  │
-    │ Harvest early,     │              │ SDG 1.5, SDG 2.4,       │
-    │ file PMFBY claim,  │              │ SDG 13.1 aligned,       │
-    │ call 1800-XXX      │              │ Takshashila governance   │
-    └─────────┬─────────┘              └──────────────────────────┘
-              │
-    ┌─────────▼─────────────┐
-    │ Omnichannel Delivery  │
-    │ - Dashboard UI        │
-    │ - Landing Chatbot     │
-    │ - TwiML Voice Call    │
-    │ - Twilio SMS alerts   │
-    └───────────────────────┘
-```
+![KISANBODHI System Architecture](assets/architecture.png)
 
 ### The Five Agents
 
